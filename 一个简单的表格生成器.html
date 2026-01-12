@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一个简单的表格生成器</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
+    <!-- 引入html2canvas库，用于将HTML转换为图片 -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif, 'SimHei', 'SimSun';
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .header h1 {
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+        }
+        
+        .header p {
+            color: #aaa;
+            max-width: 800px;
+            margin: 0 auto 20px;
+        }
+        
+        .layout-rules {
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-top: 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .layout-rules h3 {
+            color: #fff;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .rules-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .rule-item {
+            background-color: #333;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .rule-item .number {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background-color: #d32f2f;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            margin-right: 8px;
+            font-size: 0.8rem;
+        }
+        
+        .settings-panel {
+            flex: 1;
+            min-width: 300px;
+            background-color: #2a2a2a;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .preview-panel {
+            flex: 2;
+            min-width: 500px;
+            background-color: #000;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 700px;
+        }
+        
+        .section-title {
+            color: #fff;
+            font-size: 1.3rem;
+            margin: 20px 0 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #444;
+        }
+        
+        .form-group {
+            margin-bottom: 18px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #ccc;
+            font-size: 0.95rem;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            background-color: #333;
+            border: 1px solid #555;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #777;
+        }
+        
+        .color-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .color-input input[type="color"] {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            cursor: pointer;
+        }
+        
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .range-container input[type="range"] {
+            flex: 1;
+        }
+        
+        .range-value {
+            min-width: 30px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 5px;
+        }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .radio-option input {
+            width: auto;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .primary-btn {
+            background-color: #d32f2f;
+            color: white;
+        }
+        
+        .primary-btn:hover {
+            background-color: #b71c1c;
+        }
+        
+        .secondary-btn {
+            background-color: #444;
+            color: white;
+        }
+        
+        .secondary-btn:hover {
+            background-color: #555;
+        }
+        
+        .save-btn {
+            background-color: #2196F3;
+            color: white;
+        }
+        
+        .save-btn:hover {
+            background-color: #0b7dda;
+        }
+        
+        .save-btn:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        
+        /* 预览区域样式 */
+        .preview-container {
+            width: 100%;
+            max-width: 900px;
+            padding: 20px;
+            background-color: #000;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .table-title {
+            margin-bottom: 30px;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .table-subtitle {
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .boxes-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        /* 新布局：每个白框单元包含白框和对应文本框 */
+        .box-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .box {
+            border: 2px solid #fff;
+            background-color: #ffffff; /* 白框内部填充白色 */
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .box-label {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        
+        .box-text {
+            margin-top: 10px;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .text-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+        }
+        
+        .text-box {
+            padding: 8px 5px;
+            text-align: center;
+        }
+        
+        .footer-text {
+            margin-top: 30px;
+            width: 100%;
+            text-align: center;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+        
+        .text-left {
+            text-align: left;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        /* 布局样式 */
+        .layout-center .box-unit {
+            margin-bottom: 10px;
+        }
+        
+        .layout-center .box-text {
+            margin-top: 10px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1100px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .settings-panel, .preview-panel {
+                min-width: 100%;
+            }
+        }
+        
+        .note {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        
+        .special-note {
+            background-color: #333;
+            border-left: 4px solid #d32f2f;
+            padding: 10px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        .special-note h4 {
+            color: #fff;
+            margin-bottom: 5px;
+        }
+        
+        .special-note p {
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+        
+        .layout-example {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .layout-example-item {
+            background-color: #333;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+        }
+        
+        .layout-info {
+            background-color: #333;
+            border-left: 4px solid #4CAF50;
+            padding: 10px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        .layout-info h4 {
+            color: #4CAF50;
+            margin-bottom: 5px;
+        }
+        
+        .current-layout-info {
+            background-color: #333;
+            border-left: 4px solid #2196F3;
+            padding: 10px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        .current-layout-info h4 {
+            color: #2196F3;
+            margin-bottom: 5px;
+        }
+        
+        .download-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+        }
+        
+        .download-success {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .download-error {
+            background-color: #f44336;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>一个简单的表格生成器</h1>
+        <p>工具制作：@村里最乱炒的坏厨</p>
+        
+        <div class="layout-rules">
+            <h3>智能布局规则</h3>
+            <div class="rules-list">
+                <div class="rule-item"><span class="number">1</span> ≤4个时，放一排</div>
+                <div class="rule-item"><span class="number">2</span> >4个时，放两排，每排最多四个</div>
+                <div class="rule-item"><span class="number">3</span> 3的倍数时，优先每行放3个</div>
+            </div>
+            
+            <div class="layout-example">
+                <div class="layout-example-item">2个：1行2个</div>
+                <div class="layout-example-item">3个：1行3个</div>
+                <div class="layout-example-item">4个：1行4个</div>
+                <div class="layout-example-item">5个：第一行3个，第二行2个</div>
+                <div class="layout-example-item">6个：2行3个</div>
+                <div class="layout-example-item">7个：第一行4个，第二行3个</div>
+                <div class="layout-example-item">8个：2行4个</div>
+                <div class="layout-example-item">9个：3行3个</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="settings-panel">
+            <h2 class="section-title">标题设置</h2>
+            <div class="form-group">
+                <label for="titleText">标题内容</label>
+                <input type="text" id="titleText" value="这是标题">
+            </div>
+            
+            <div class="form-group">
+                <label for="subtitleText">副标题/说明</label>
+                <input type="text" id="subtitleText" value="这是副标题/说明">
+                <p class="note">副标题会显示在主标题下方，用较小字体</p>
+            </div>
+            
+            <div class="form-group">
+                <label>标题颜色</label>
+                <div class="color-input">
+                    <input type="color" id="titleColor" value="#ffffff">
+                    <span>白色</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="titleSize">标题字号 (px)</label>
+                <div class="range-container">
+                    <input type="range" id="titleSize" min="16" max="60" value="32">
+                    <span class="range-value" id="titleSizeValue">32px</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>标题对齐方式</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="titleAlignLeft" name="titleAlign" value="left">
+                        <label for="titleAlignLeft">靠左</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="titleAlignCenter" name="titleAlign" value="center" checked>
+                        <label for="titleAlignCenter">居中</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="titleAlignRight" name="titleAlign" value="right">
+                        <label for="titleAlignRight">靠右</label>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 class="section-title">白框设置</h2>
+            <div class="form-group">
+                <label for="boxCount">白框数量 (2-9个)</label>
+                <div class="range-container">
+                    <input type="range" id="boxCount" min="2" max="9" value="6">
+                    <span class="range-value" id="boxCountValue">6个</span>
+                </div>
+                <div class="layout-info">
+                    <h4>当前布局规则</h4>
+                    <p id="layoutRuleText">6个是3的倍数，将使用2行3列布局（每行3个）</p>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="boxSize">白框尺寸 (px)</label>
+                <div class="range-container">
+                    <input type="range" id="boxSize" min="60" max="200" value="100">
+                    <span class="range-value" id="boxSizeValue">100px</span>
+                </div>
+            </div>
+            
+            <h2 class="section-title">文本框设置</h2>
+            
+            <div class="form-group">
+                <label for="textContent">文本框内容 (用竖线|分隔)</label>
+                <textarea id="textContent" rows="4">文本1|文本2|文本3|文本4|文本5|文本6</textarea>
+                <p class="note">每个文本框对应一个白框，用竖线|分隔。例如：文本1|文本2|文本3</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="boxLabels">白框上方标签 (用竖线|分隔，可选)</label>
+                <textarea id="boxLabels" rows="3">标签1|标签2|标签3|标签4|标签5|标签6</textarea>
+                <p class="note">设置上方标签，一行写不下会自动换行，但是可能出现无法对齐的情况</p>
+            </div>
+            
+            <div class="form-group">
+                <label>文本颜色</label>
+                <div class="color-input">
+                    <input type="color" id="textColor" value="#ffffff">
+                    <span>白色</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>标签颜色</label>
+                <div class="color-input">
+                    <input type="color" id="labelColor" value="#ff0000">
+                    <span>红色</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="textSize">文本字号 (px)</label>
+                <div class="range-container">
+                    <input type="range" id="textSize" min="12" max="40" value="16">
+                    <span class="range-value" id="textSizeValue">16px</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>文本对齐方式</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="textAlignLeft" name="textAlign" value="left">
+                        <label for="textAlignLeft">靠左</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="textAlignCenter" name="textAlign" value="center" checked>
+                        <label for="textAlignCenter">居中</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="textAlignRight" name="textAlign" value="right">
+                        <label for="textAlignRight">靠右</label>
+                    </div>
+                </div>
+            </div>
+                        
+            <h2 class="section-title">底部信息</h2>
+            <div class="form-group">
+                <label for="creatorText">制表人</label>
+                <input type="text" id="creatorText" value="制表人：填了就会显示，不填就不显示">
+            </div>
+            
+            <div class="form-group">
+                <label for="fillerText">填表人</label>
+                <input type="text" id="fillerText" value="也可以当底部碎碎念来用">
+            </div>
+            
+            <div class="button-group">
+                <button class="primary-btn" id="updatePreview">更新预览</button>
+                <button class="secondary-btn" id="resetSettings">重置设置</button>
+                <button class="save-btn" id="saveImage">保存为图片</button>
+            </div>
+            
+            <div id="downloadStatus" class="download-status"></div>
+        </div>
+        
+        <div class="preview-panel">
+            <h2 class="section-title">实时预览</h2>
+            <div class="current-layout-info">
+                <h4>当前布局信息</h4>
+                <p id="currentLayoutText">6个白框，使用2行3列布局（每行3个）</p>
+            </div>
+            <div class="preview-container" id="previewContainer">
+                <!-- 预览内容将在这里动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const boxCountInput = document.getElementById('boxCount');
+        const boxCountValue = document.getElementById('boxCountValue');
+        const boxSizeInput = document.getElementById('boxSize');
+        const boxSizeValue = document.getElementById('boxSizeValue');
+        const titleSizeInput = document.getElementById('titleSize');
+        const titleSizeValue = document.getElementById('titleSizeValue');
+        const textSizeInput = document.getElementById('textSize');
+        const textSizeValue = document.getElementById('textSizeValue');
+        const updatePreviewBtn = document.getElementById('updatePreview');
+        const resetSettingsBtn = document.getElementById('resetSettings');
+        const saveImageBtn = document.getElementById('saveImage');
+        const previewContainer = document.getElementById('previewContainer');
+        const layoutRuleText = document.getElementById('layoutRuleText');
+        const currentLayoutText = document.getElementById('currentLayoutText');
+        const downloadStatus = document.getElementById('downloadStatus');
+        
+        // 智能布局计算函数
+        function calculateLayout(boxCount) {
+            let rows, columns, layoutDescription;
+            
+            if (boxCount % 3 === 0) {
+                // 规则3：3的倍数，优先每行3个
+                columns = 3;
+                rows = boxCount / 3;
+                layoutDescription = `${boxCount}个是3的倍数，将使用${rows}行${columns}列布局（每行3个）`;
+            } else if (boxCount <= 4) {
+                // 规则1：≤4个时，放一排
+                columns = boxCount;
+                rows = 1;
+                layoutDescription = `${boxCount}个，将使用1行${columns}列布局`;
+            } else {
+                // 规则2：>4个时，放两排，每排最多四个
+                rows = 2;
+                const firstRowCount = Math.ceil(boxCount / 2);
+                const secondRowCount = boxCount - firstRowCount;
+                
+                // 每排最多四个
+                const firstRowColumns = Math.min(firstRowCount, 4);
+                const secondRowColumns = Math.min(secondRowCount, 4);
+                
+                // 如果是5个，则第一行3个，第二行2个
+                if (boxCount === 5) {
+                    columns = 3; // 第一行3个
+                    layoutDescription = `${boxCount}个，将使用2行布局（第一行3个，第二行2个）`;
+                } 
+                // 如果是7个，则第一行4个，第二行3个
+                else if (boxCount === 7) {
+                    columns = 4; // 第一行4个
+                    layoutDescription = `${boxCount}个，将使用2行布局（第一行4个，第二行3个）`;
+                }
+                // 如果是8个，则每行4个
+                else if (boxCount === 8) {
+                    columns = 4;
+                    layoutDescription = `${boxCount}个，将使用2行4列布局（每行4个）`;
+                }
+                // 如果是9个，已经在第一个条件处理了（3的倍数）
+                else {
+                    // 其他情况（理论上不会执行，因为范围是2-9）
+                    columns = Math.max(firstRowColumns, secondRowColumns);
+                    layoutDescription = `${boxCount}个，将使用2行布局（第一行${firstRowColumns}个，第二行${secondRowColumns}个）`;
+                }
+            }
+            
+            return { rows, columns, layoutDescription };
+        }
+        
+        // 更新范围值的显示
+        boxCountInput.addEventListener('input', function() {
+            const count = parseInt(this.value);
+            boxCountValue.textContent = `${count}个`;
+            
+            // 更新布局规则描述
+            const layout = calculateLayout(count);
+            layoutRuleText.textContent = layout.layoutDescription;
+        });
+        
+        boxSizeInput.addEventListener('input', function() {
+            boxSizeValue.textContent = `${this.value}px`;
+        });
+        
+        titleSizeInput.addEventListener('input', function() {
+            titleSizeValue.textContent = `${this.value}px`;
+        });
+        
+        textSizeInput.addEventListener('input', function() {
+            textSizeValue.textContent = `${this.value}px`;
+        });
+        
+        // 颜色选择器值变化时更新文本
+        document.getElementById('titleColor').addEventListener('input', function() {
+            this.nextElementSibling.textContent = this.value === '#ffffff' ? '白色' : 
+                                                this.value === '#ff0000' ? '红色' : 
+                                                this.value === '#0000ff' ? '蓝色' : 
+                                                this.value === '#00ff00' ? '绿色' : 
+                                                this.value === '#ffff00' ? '黄色' : 
+                                                `颜色: ${this.value}`;
+        });
+        
+        document.getElementById('textColor').addEventListener('input', function() {
+            this.nextElementSibling.textContent = this.value === '#ffffff' ? '白色' : 
+                                                this.value === '#ff0000' ? '红色' : 
+                                                this.value === '#0000ff' ? '蓝色' : 
+                                                this.value === '#00ff00' ? '绿色' : 
+                                                this.value === '#ffff00' ? '黄色' : 
+                                                `颜色: ${this.value}`;
+        });
+        
+        document.getElementById('labelColor').addEventListener('input', function() {
+            this.nextElementSibling.textContent = this.value === '#ffffff' ? '白色' : 
+                                                this.value === '#ff0000' ? '红色' : 
+                                                this.value === '#0000ff' ? '蓝色' : 
+                                                this.value === '#00ff00' ? '绿色' : 
+                                                this.value === '#ffff00' ? '黄色' : 
+                                                `颜色: ${this.value}`;
+        });
+        
+        // 生成预览
+        function generatePreview() {
+            // 获取所有设置值
+            const titleText = document.getElementById('titleText').value;
+            const subtitleText = document.getElementById('subtitleText').value;
+            const titleColor = document.getElementById('titleColor').value;
+            const titleSize = document.getElementById('titleSize').value;
+            const titleAlign = document.querySelector('input[name="titleAlign"]:checked').value;
+            
+            const boxCount = parseInt(document.getElementById('boxCount').value);
+            const boxSize = parseInt(document.getElementById('boxSize').value);
+            
+            const textContent = document.getElementById('textContent').value.split('|').map(t => t.trim());
+            const boxLabels = document.getElementById('boxLabels').value.split('|').map(t => t.trim());
+            const textColor = document.getElementById('textColor').value;
+            const labelColor = document.getElementById('labelColor').value;
+            const textSize = document.getElementById('textSize').value;
+            const textAlign = document.querySelector('input[name="textAlign"]:checked').value;
+            
+            const creatorText = document.getElementById('creatorText').value;
+            const fillerText = document.getElementById('fillerText').value;
+            
+            // 计算布局
+            const layout = calculateLayout(boxCount);
+            const { rows, columns, layoutDescription } = layout;
+            
+            // 更新当前布局信息
+            currentLayoutText.textContent = layoutDescription;
+            
+            // 清空预览容器
+            previewContainer.innerHTML = '';
+            
+            // 创建标题
+            const titleElement = document.createElement('div');
+            titleElement.className = 'table-title';
+            titleElement.style.color = titleColor;
+            titleElement.style.fontSize = `${titleSize}px`;
+            titleElement.style.textAlign = titleAlign;
+            titleElement.style.width = '100%';
+            titleElement.textContent = titleText;
+            previewContainer.appendChild(titleElement);
+            
+            // 创建副标题
+            if (subtitleText && subtitleText.trim() !== '') {
+                const subtitleElement = document.createElement('div');
+                subtitleElement.className = 'table-subtitle';
+                subtitleElement.style.textAlign = titleAlign;
+                subtitleElement.textContent = subtitleText;
+                previewContainer.appendChild(subtitleElement);
+            }
+            
+            // 创建白框和文本框容器
+            const boxesContainer = document.createElement('div');
+            boxesContainer.className = 'boxes-container';
+            boxesContainer.style.gap = '20px';
+            boxesContainer.style.marginTop = '30px';
+            boxesContainer.style.marginBottom = '20px';
+            
+            // 根据布局规则创建白框
+            let boxIndex = 0;
+            
+            // 对于每一行
+            for (let row = 0; row < rows; row++) {
+                // 创建行容器
+                const rowContainer = document.createElement('div');
+                rowContainer.style.display = 'flex';
+                rowContainer.style.justifyContent = 'center';
+                rowContainer.style.gap = '20px';
+                rowContainer.style.marginBottom = '20px';
+                rowContainer.style.width = '100%';
+                
+                // 计算当前行的白框数量
+                let boxesInRow;
+                if (boxCount % 3 === 0) {
+                    // 3的倍数，每行3个
+                    boxesInRow = 3;
+                } else if (boxCount <= 4) {
+                    // ≤4个，全部在一行
+                    boxesInRow = boxCount;
+                } else {
+                    // >4个，分两行
+                    if (row === 0) {
+                        // 第一行
+                        boxesInRow = Math.ceil(boxCount / 2);
+                        if (boxesInRow > 4) boxesInRow = 4; // 每行最多4个
+                    } else {
+                        // 第二行
+                        boxesInRow = boxCount - Math.ceil(boxCount / 2);
+                        if (boxesInRow > 4) boxesInRow = 4; // 每行最多4个
+                    }
+                }
+                
+                // 创建当前行的白框
+                for (let col = 0; col < boxesInRow; col++) {
+                    if (boxIndex >= boxCount) break;
+                    
+                    const boxUnit = document.createElement('div');
+                    boxUnit.className = 'box-unit';
+                    boxUnit.style.width = `${boxSize}px`;
+                    
+                    // 添加白框上方的标签（如果有）
+                    if (boxLabels[boxIndex] && boxLabels[boxIndex].trim() !== '') {
+                        const boxLabel = document.createElement('div');
+                        boxLabel.className = 'box-label';
+                        boxLabel.textContent = boxLabels[boxIndex];
+                        boxLabel.style.color = labelColor;
+                        boxLabel.style.fontSize = `${textSize}px`;
+                        boxLabel.style.textAlign = textAlign;
+                        boxUnit.appendChild(boxLabel);
+                    }
+                    
+                    // 创建白框
+                    const box = document.createElement('div');
+                    box.className = 'box';
+                    box.style.width = `${boxSize}px`;
+                    box.style.height = `${boxSize}px`;
+                    box.style.backgroundColor = '#ffffff'; // 白框内部填充白色
+                    boxUnit.appendChild(box);
+                    
+                    // 创建白框下方对应的文本框
+                    const boxText = document.createElement('div');
+                    boxText.className = 'box-text';
+                    boxText.textContent = textContent[boxIndex] || `文本${boxIndex+1}`;
+                    boxText.style.color = textColor;
+                    boxText.style.fontSize = `${textSize}px`;
+                    boxText.style.textAlign = textAlign;
+                    boxText.style.width = '100%';
+                    boxUnit.appendChild(boxText);
+                    
+                    rowContainer.appendChild(boxUnit);
+                    boxIndex++;
+                }
+                
+                // 将行容器添加到主容器
+                boxesContainer.appendChild(rowContainer);
+            }
+            
+            previewContainer.appendChild(boxesContainer);
+            
+            // 创建底部信息
+            const footerElement = document.createElement('div');
+            footerElement.className = 'footer-text';
+            footerElement.style.marginTop = '30px';
+            
+            const creatorElement = document.createElement('div');
+            creatorElement.textContent = creatorText;
+            creatorElement.style.marginBottom = '5px';
+            
+            const fillerElement = document.createElement('div');
+            fillerElement.textContent = fillerText;
+            
+            footerElement.appendChild(creatorElement);
+            footerElement.appendChild(fillerElement);
+            previewContainer.appendChild(footerElement);
+        }
+        
+        // 保存为图片功能
+        saveImageBtn.addEventListener('click', function() {
+            // 显示下载状态
+            downloadStatus.textContent = "正在生成图片，请稍候...";
+            downloadStatus.className = "download-status";
+            downloadStatus.style.display = "block";
+            
+            // 禁用保存按钮，防止重复点击
+            saveImageBtn.disabled = true;
+            saveImageBtn.textContent = "生成中...";
+            
+            // 使用html2canvas将预览区域转换为canvas
+            html2canvas(previewContainer, {
+                backgroundColor: '#000000', // 设置背景色为黑色
+                scale: 2, // 提高图片质量
+                useCORS: true, // 允许跨域资源
+                logging: false // 关闭日志
+            }).then(function(canvas) {
+                // 将canvas转换为图片数据URL
+                const imageData = canvas.toDataURL('image/png');
+                
+                // 创建一个临时链接用于下载
+                const link = document.createElement('a');
+                link.download = '表格图片.png';
+                link.href = imageData;
+                
+                // 模拟点击下载
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // 显示下载成功状态
+                downloadStatus.textContent = "图片下载成功！";
+                downloadStatus.className = "download-status download-success";
+                
+                // 3秒后隐藏状态消息
+                setTimeout(() => {
+                    downloadStatus.style.display = "none";
+                }, 3000);
+                
+            }).catch(function(error) {
+                console.error('生成图片时出错:', error);
+                
+                // 显示下载失败状态
+                downloadStatus.textContent = "图片生成失败，请重试";
+                downloadStatus.className = "download-status download-error";
+            }).finally(function() {
+                // 恢复保存按钮状态
+                saveImageBtn.disabled = false;
+                saveImageBtn.textContent = "保存为图片";
+            });
+        });
+        
+        // 初始化预览
+        generatePreview();
+        
+        // 更新预览按钮点击事件
+        updatePreviewBtn.addEventListener('click', generatePreview);
+        
+        // 重置设置按钮点击事件
+        resetSettingsBtn.addEventListener('click', function() {
+            // 重置所有输入到默认值
+            document.getElementById('titleText').value = '这个是标题';
+            document.getElementById('subtitleText').value = '';
+            document.getElementById('titleColor').value = '#ffffff';
+            document.getElementById('titleColor').nextElementSibling.textContent = '白色';
+            document.getElementById('titleSize').value = 32;
+            document.getElementById('titleSizeValue').textContent = '32px';
+            document.getElementById('titleAlignCenter').checked = true;
+            
+            document.getElementById('boxCount').value = 6;
+            document.getElementById('boxCountValue').textContent = '6个';
+            const layout = calculateLayout(6);
+            layoutRuleText.textContent = layout.layoutDescription;
+            
+            document.getElementById('boxSize').value = 100;
+            document.getElementById('boxSizeValue').textContent = '100px';
+            
+            document.getElementById('textContent').value = '文本1|文本2|文本3|文本4|文本5|文本6';
+            document.getElementById('boxLabels').value = '标签1|标签2|标签3|标签4|标签5|标签6';
+            document.getElementById('textColor').value = '#ffffff';
+            document.getElementById('textColor').nextElementSibling.textContent = '白色';
+            document.getElementById('labelColor').value = '#ff0000';
+            document.getElementById('labelColor').nextElementSibling.textContent = '红色';
+            document.getElementById('textSize').value = 16;
+            document.getElementById('textSizeValue').textContent = '16px';
+            document.getElementById('textAlignCenter').checked = true;
+            
+            document.getElementById('creatorText').value = '制表人：填了就会显示，不填就不显示';
+            document.getElementById('fillerText').value = '也可以当底部碎碎念来用';
+            
+            // 更新预览
+            generatePreview();
+        });
+        
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            // 为所有输入添加输入事件监听，实现实时预览更新
+            const allInputs = document.querySelectorAll('input, select, textarea');
+            allInputs.forEach(input => {
+                input.addEventListener('input', generatePreview);
+                if (input.type === 'radio') {
+                    input.addEventListener('change', generatePreview);
+                }
+            });
+            
+            // 初始布局信息
+            const layout = calculateLayout(6);
+            layoutRuleText.textContent = layout.layoutDescription;
+        });
+    </script>
+</body>
+</html>
