@@ -1,0 +1,2500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一个简单的表格生成器</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        * {margin: 0;padding: 0;box-sizing: border-box;}
+        body {font-family: 'Noto Sans SC', sans-serif, 'SimHei', 'SimSun';
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;}
+        .container {display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-top: 20px;}
+        .header {text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;}
+        .header h1 {color: #fff;margin-bottom: 10px;font-size: 2.2rem;}
+        .header p {color: #aaa;max-width: 800px;margin: 0 auto 20px;}
+        .layout-rules {background-color: #2a2a2a;border-radius: 8px;padding: 15px 20px;
+            margin-top: 20px;max-width: 800px;margin-left: auto;margin-right: auto;}
+        .layout-rules h3 {color: #fff;margin-bottom: 10px;text-align: center;}
+        .rules-list {display: flex;flex-wrap: wrap;justify-content: center;gap: 15px;}
+        .rule-item {background-color: #333;padding: 10px 15px;border-radius: 5px;
+            font-size: 0.9rem;}
+        .rule-item .number {display: inline-block;width: 20px;height: 20px;
+            background-color: #d32f2f;color: white;border-radius: 50%;text-align: center;
+            line-height: 20px;margin-right: 8px;font-size: 0.8rem;}
+        .settings-panel {flex: 1;min-width: 300px;
+            background-color: #2a2a2a;border-radius: 10px;padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);}
+        .preview-panel {flex: 2;min-width: 500px;background-color: #000;border-radius: 10px;
+            padding: 25px;box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            display: flex;flex-direction: column;
+            align-items: center;justify-content: center;min-height: 700px;}
+        .section-title {color: #fff;font-size: 1.3rem;margin: 20px 0 15px;
+            padding-bottom: 8px;border-bottom: 1px solid #444;}
+        .form-group {margin-bottom: 18px;}
+        label {display: block;margin-bottom: 6px;color: #ccc;font-size: 0.95rem;}
+        input, select, textarea {width: 100%;padding: 10px 12px;background-color: #333;
+            border: 1px solid #555;border-radius: 5px;color: #fff;font-size: 1rem;}
+        input:focus, select:focus, textarea:focus {outline: none;border-color: #777;}
+        .color-input {display: flex;align-items: center;gap: 10px;}
+        .color-input input[type="color"] {width: 40px;height: 40px;padding: 0;cursor: pointer;}
+        .range-container {display: flex;align-items: center;gap: 15px;}
+        .range-container input[type="range"] {flex: 1;}
+        .range-value {min-width: 30px;text-align: center;font-weight: bold;}
+        .radio-group {display: flex;gap: 20px;margin-top: 5px;}
+        .radio-option {display: flex;align-items: center;gap: 6px;}
+        .radio-option input {width: auto;}
+        .button-group {display: flex;gap: 15px;margin-top: 25px;flex-wrap: wrap;}
+        button {padding: 12px 20px;border: none;border-radius: 5px;cursor: pointer;
+            font-weight: 600;font-size: 1rem;transition: all 0.3s ease;flex: 1;min-width: 120px;}
+        .primary-btn {background-color: #d32f2f;color: white;}
+        .primary-btn:hover {background-color: #b71c1c;}
+        .secondary-btn {background-color: #444;color: white;}
+        .secondary-btn:hover {background-color: #555;}
+        .save-btn {background-color: #2196F3;color: white;}
+        .save-btn:hover {background-color: #0b7dda;}
+        .save-btn:disabled {background-color: #666;cursor: not-allowed;}
+        
+        /* 预览区域样式 */
+        .preview-container {width: 100%;max-width: 900px;padding: 20px;
+            background-color: #000;border-radius: 8px;display: flex;flex-direction: column;
+            align-items: center;}
+        .table-title {margin-bottom: 30px;text-align: center;width: 100%;}
+        .table-subtitle {color: #aaa;font-size: 0.9rem;margin-top: 5px;}
+        .boxes-container {display: flex;flex-wrap: wrap;justify-content: center;
+            gap: 20px;margin-bottom: 20px;}
+        
+        /* 每个白框单元包含白框和对应文本框 */
+        .box-unit {display: flex;flex-direction: column;align-items: center;}
+        .box {border: 2px solid #fff;
+            background-color: #ffffff; /* 白框内部填充白色 */
+            border-radius: 5px;display: flex;align-items: center;justify-content: center;}
+        .box-label {font-size: 1.1rem;font-weight: bold;margin-bottom: 8px;text-align: center;}
+        .box-text {margin-top: 10px;text-align: center;width: 100%;}
+        .text-container {display: flex;flex-wrap: wrap;justify-content: center;gap: 20px;
+            width: 100%;}
+        .text-box {padding: 8px 5px;text-align: center;}
+        .footer-text {margin-top: 30px;width: 100%;text-align: center;color: #aaa;
+            font-size: 0.9rem;}
+        .text-left {text-align: left;}
+        .text-center {text-align: center;}
+        .text-right {text-align: right;}
+        
+        /* 布局样式 */
+        .layout-center .box-unit {margin-bottom: 10px;}
+        .layout-center .box-text {margin-top: 10px;}
+
+        /* 响应式设计 - 桌面端 */
+        @media (min-width: 1101px) {
+            .mobile-toggle-btn {display: none;}
+            .mobile-sidebar {display: none;}
+            
+            /* 桌面端设置面板滚动条 */
+            .desktop-settings {
+                max-height: 90vh;
+                overflow-y: auto;
+                padding-right: 10px;
+            }
+            
+            /* 自定义滚动条样式 */
+            .desktop-settings::-webkit-scrollbar {
+                width: 8px;
+            }
+            
+            .desktop-settings::-webkit-scrollbar-track {
+                background: #333;
+                border-radius: 4px;
+            }
+            
+            .desktop-settings::-webkit-scrollbar-thumb {
+                background: #555;
+                border-radius: 4px;
+            }
+            
+            .desktop-settings::-webkit-scrollbar-thumb:hover {
+                background: #777;
+            }
+            
+            /* 桌面端滚动条指示器 */
+            .scroll-indicator {
+                position: absolute;
+                right: 5px;
+                top: 50%;
+                transform: translateY(-50%);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                z-index: 10;
+                opacity: 0.7;
+                transition: opacity 0.3s;
+            }
+            
+            .scroll-indicator:hover {
+                opacity: 1;
+            }
+            
+            .scroll-indicator .scroll-btn {
+                width: 24px;
+                height: 24px;
+                background-color: #d32f2f;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                font-size: 16px;
+                font-weight: bold;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            }
+            
+            .scroll-indicator .scroll-btn:hover {
+                background-color: #b71c1c;
+                transform: scale(1.1);
+            }
+            
+            .scroll-indicator .scroll-btn:active {
+                transform: scale(0.95);
+            }
+            
+            .scroll-indicator .scroll-btn.up {
+                margin-bottom: 5px;
+            }
+            
+            .scroll-indicator .scroll-btn.down {
+                margin-top: 5px;
+            }
+            
+            .scroll-indicator .scroll-track {
+                width: 4px;
+                height: 100px;
+                background-color: #444;
+                border-radius: 2px;
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .scroll-indicator .scroll-track .scroll-thumb {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 30px;
+                background-color: #d32f2f;
+                border-radius: 2px;
+                transition: top 0.1s;
+            }
+        }
+        
+        /* 响应式设计 - 手机端 */
+        @media (max-width: 1100px) {
+            .container {flex-direction: column;}
+            .settings-panel, .preview-panel {min-width: 100%;}
+            
+            /* 手机端侧边栏样式 */
+            .mobile-toggle-btn {
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                z-index: 1001;
+                background-color: #d32f2f;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                padding: 12px 20px;
+                font-weight: bold;
+                cursor: pointer;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            }
+            
+            .mobile-sidebar {
+                position: fixed;
+                top: 0;
+                left: -350px;
+                width: 350px;
+                height: 100%;
+                background-color: #2a2a2a;
+                z-index: 1000;
+                overflow-y: auto;
+                padding: 20px;
+                transition: left 0.3s ease;
+                box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+            }
+            
+            .mobile-sidebar.active {
+                left: 0;
+            }
+            
+            .mobile-sidebar .settings-panel {
+                box-shadow: none;
+                padding: 15px;
+                min-width: auto;
+                width: 100%;
+                background: transparent;
+            }
+            
+            .mobile-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0,0,0,0.7);
+                z-index: 999;
+            }
+            
+            .mobile-overlay.active {
+                display: block;
+            }
+            
+            .mobile-sidebar .section-title {
+                font-size: 1.2rem;
+            }
+            
+            /* 侧边栏关闭按钮 */
+            .close-sidebar {
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                background: transparent;
+                border: none;
+                color: #fff;
+                font-size: 1.5rem;
+                cursor: pointer;
+                width: 30px;
+                height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+        
+        .note {font-size: 0.85rem;color: #888;margin-top: 5px;font-style: italic;}
+        .warning-note {font-size: 0.85rem;color: #ff9800;margin-top: 5px;font-style: italic;font-weight: bold;}
+        .special-note {background-color: #333;border-left: 4px solid #d32f2f;
+            padding: 10px;margin: 15px 0;border-radius: 4px;}
+        .special-note h4 {color: #fff;margin-bottom: 5px;}
+        .special-note p {color: #ccc;font-size: 0.9rem;}
+        .layout-example {margin-top: 20px;display: flex;flex-wrap: wrap;gap: 10px;
+            justify-content: center;}
+        .layout-example-item {background-color: #333;padding: 8px 12px;
+            border-radius: 5px;font-size: 0.85rem;}
+        .layout-info {background-color: #333;border-left: 4px solid #4CAF50;
+            padding: 10px;margin: 15px 0;border-radius: 4px;}
+        .layout-info h4 {color: #4CAF50;margin-bottom: 5px;}
+        .current-layout-info {background-color: #333;border-left: 4px solid #2196F3;
+            padding: 10px;margin: 15px 0;border-radius: 4px;}
+        .current-layout-info h4 {color: #2196F3;margin-bottom: 5px;}
+        .download-status {margin-top: 10px;padding: 10px;border-radius: 5px;
+            text-align: center;display: none;}
+        .download-success {background-color: #4CAF50;color: white;}
+        .download-error {background-color: #f44336;color: white;}
+        
+        /* 改色样式 */
+        .feature-toggle {display: flex;align-items: center;gap: 10px;margin-bottom: 15px;}
+        .feature-toggle input[type="checkbox"] {width: auto;transform: scale(1.2);}
+        .individual-colors-container {max-height: 200px;overflow-y: auto;padding: 10px;
+            background-color: #333;border-radius: 5px;margin-top: 10px;display: none;}
+        .individual-color-item {display: flex;align-items: center;gap: 10px;margin-bottom: 8px;
+            padding: 5px;}
+        .individual-color-item label {min-width: 60px;margin-bottom: 0;}
+        .individual-color-item input[type="color"] {width: 30px;height: 30px;}
+        .individual-color-item input[type="text"] {flex: 1;padding: 5px;}
+        
+        /* 单独尺寸设置样式 */
+        .individual-sizes-container {max-height: 200px;overflow-y: auto;padding: 10px;
+            background-color: #333;border-radius: 5px;margin-top: 10px;display: none;}
+        .individual-size-item {display: flex;align-items: center;gap: 10px;margin-bottom: 8px;
+            padding: 5px;}
+        .individual-size-item label {min-width: 60px;margin-bottom: 0;}
+        .individual-size-item input[type="range"] {flex: 1;}
+        .individual-size-item .range-value {min-width: 40px;text-align: center;}
+        .individual-size-item input[type="text"] {flex: 1;padding: 5px;}
+        
+        /* 标题单独改色样式 */
+        .individual-title-colors-container {max-height: 200px;overflow-y: auto;padding: 10px;
+            background-color: #333;border-radius: 5px;margin-top: 10px;display: none;}
+        .individual-title-color-item {display: flex;align-items: center;gap: 10px;
+            margin-bottom: 8px;padding: 5px;}
+        .individual-title-color-item label {min-width: 60px;margin-bottom: 0;}
+        .individual-title-color-item input[type="color"] {width: 30px;height: 30px;}
+        .individual-title-color-item input[type="text"] {flex: 1;padding: 5px;}
+        
+        /* 字体选择器样式 */
+        .font-family-selector {display: flex;flex-wrap: wrap;gap: 10px;margin-top: 5px;}
+        .font-option {flex: 1;min-width: 80px;}
+        .font-option input[type="radio"] {display: none;}
+        .font-option label {
+            display: block;
+            padding: 8px 12px;
+            background-color: #333;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .font-option input[type="radio"]:checked + label {
+            background-color: #d32f2f;
+            color: white;
+        }
+        
+        /* 字体大小单独设置样式 */
+        .individual-font-sizes-container {max-height: 200px;overflow-y: auto;padding: 10px;
+            background-color: #333;border-radius: 5px;margin-top: 10px;display: none;}
+        .individual-font-size-item {display: flex;align-items: center;gap: 10px;margin-bottom: 8px;
+            padding: 5px;}
+        .individual-font-size-item label {min-width: 80px;margin-bottom: 0;}
+        .individual-font-size-item input[type="range"] {flex: 1;}
+        .individual-font-size-item .range-value {min-width: 40px;text-align: center;}
+    </style>
+</head>
+<body>
+    <!-- 手机端侧边栏切换按钮 -->
+    <button class="mobile-toggle-btn" id="mobileToggleBtn">编辑面板</button>
+    
+    <!-- 手机端侧边栏 -->
+    <div class="mobile-sidebar" id="mobileSidebar">
+        <button class="close-sidebar" id="closeSidebar">&times;</button>
+        <div class="settings-panel">
+            <h2 class="section-title">标题设置</h2>
+            <div class="form-group">
+                <label for="titleText">标题内容 (用竖线|分隔各部分)</label>
+                <input type="text" id="titleText" value="这是|标题">
+                <p class="note">用竖线|分隔标题的各个部分，开启单独改色功能后可以为每部分设置不同颜色</p>
+            </div>
+            <div class="form-group">
+                <label for="subtitleText">副标题/说明</label>
+                <input type="text" id="subtitleText" value="这是副标题/说明">
+                <p class="note">副标题会显示在主标题下方，用较小字体</p>
+            </div>
+            
+            <!-- 字体选择器 -->
+            <div class="form-group">
+                <label>标题字体</label>
+                <div class="font-family-selector">
+                    <div class="font-option">
+                        <input type="radio" id="titleFontSong" name="titleFont" value="'SimSun', 'Songti SC', serif" checked>
+                        <label for="titleFontSong" style="font-family: 'SimSun', 'Songti SC', serif;">宋体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="titleFontKai" name="titleFont" value="'KaiTi', 'STKaiti', serif">
+                        <label for="titleFontKai" style="font-family: 'KaiTi', 'STKaiti', serif;">楷体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="titleFontHei" name="titleFont" value="'SimHei', 'STHeiti', sans-serif">
+                        <label for="titleFontHei" style="font-family: 'SimHei', 'STHeiti', sans-serif;">黑体</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 副标题字体选择器 -->
+            <div class="form-group">
+                <label>副标题字体</label>
+                <div class="font-family-selector">
+                    <div class="font-option">
+                        <input type="radio" id="subtitleFontSong" name="subtitleFont" value="'SimSun', 'Songti SC', serif">
+                        <label for="subtitleFontSong" style="font-family: 'SimSun', 'Songti SC', serif;">宋体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="subtitleFontKai" name="subtitleFont" value="'KaiTi', 'STKaiti', serif">
+                        <label for="subtitleFontKai" style="font-family: 'KaiTi', 'STKaiti', serif;">楷体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="subtitleFontHei" name="subtitleFont" value="'SimHei', 'STHeiti', sans-serif" checked>
+                        <label for="subtitleFontHei" style="font-family: 'SimHei', 'STHeiti', sans-serif;">黑体</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>标题颜色</label>
+                <div class="color-input">
+                    <input type="color" id="titleColor" value="#ffffff">
+                    <span>白色</span>
+                </div>
+            </div>
+            
+            <!-- 标题单独改色功能 -->
+            <div class="form-group">
+                <div class="feature-toggle">
+                    <input type="checkbox" id="enableTitleColorFeature">
+                    <label for="enableTitleColorFeature" style="font-weight: bold; color: #9C27B0;">开启功能：单独设置标题各部分颜色</label>
+                </div>
+                <div class="individual-title-colors-container" id="titleIndividualColorsContainer">
+                    <!-- 动态生成的标题单独颜色设置项 -->
+                </div>
+                <p class="note">开启后，可以为标题的每个部分单独设置颜色，关闭则使用统一的标题颜色</p>
+            </div>
+            
+            <!-- 标题单独字号设置 -->
+            <div class="form-group">
+                <div class="feature-toggle">
+                    <input type="checkbox" id="enableTitleSizeFeature">
+                    <label for="enableTitleSizeFeature" style="font-weight: bold; color: #00BCD4;">开启功能：单独设置标题各部分字号</label>
+                </div>
+                <div class="individual-font-sizes-container" id="titleIndividualSizesContainer">
+                    <!-- 动态生成的标题单独字号设置项 -->
+                </div>
+                <p class="note">开启后，可以为标题的每个部分单独设置字号，关闭则使用统一的标题字号</p>
+                <p class="warning-note">注意：使用此功能时需打开上方"单独设置标题各部分颜色"功能。</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="titleSize">标题字号 (px)</label>
+                <div class="range-container">
+                    <input type="range" id="titleSize" min="16" max="60" value="32">
+                    <span class="range-value" id="titleSizeValue">32px</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>标题对齐方式</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="titleAlignLeft" name="titleAlign" value="left">
+                        <label for="titleAlignLeft">靠左</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="titleAlignCenter" name="titleAlign" value="center" checked>
+                        <label for="titleAlignCenter">居中</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="titleAlignRight" name="titleAlign" value="right">
+                        <label for="titleAlignRight">靠右</label>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 class="section-title">白框设置</h2>
+            <div class="form-group">
+                <label for="boxCount">白框数量 (2-12个)</label>
+                <div class="range-container">
+                    <input type="range" id="boxCount" min="2" max="12" value="6">
+                    <span class="range-value" id="boxCountValue">6个</span>
+                </div>
+                <div class="layout-info">
+                    <h4>当前布局规则</h4>
+                    <p id="layoutRuleText">6个是3的倍数，将使用2行3列布局（每行3个）</p>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="boxSize">白框尺寸 (px)</label>
+                <div class="range-container">
+                    <input type="range" id="boxSize" min="60" max="200" value="100">
+                    <span class="range-value" id="boxSizeValue">100px</span>
+                </div>
+            </div>
+            
+            <!-- 单独设置每个白框尺寸 -->
+            <div class="form-group">
+                <div class="feature-toggle">
+                    <input type="checkbox" id="enableBoxSizeFeature">
+                    <label for="enableBoxSizeFeature" style="font-weight: bold; color: #FF5722;">开启功能：单独设置每个白框尺寸</label>
+                </div>
+                <div class="individual-sizes-container" id="boxIndividualSizesContainer">
+                    <!-- 动态生成的白框单独尺寸设置项将放在这里 -->
+                </div>
+                <p class="note">开启后，可以为每个白框单独设置尺寸，关闭则使用统一的尺寸</p>
+            </div>
+            
+            <h2 class="section-title">文本框设置</h2>
+            <div class="form-group">
+                <label for="textContent">文本框内容 (用竖线|分隔)</label>
+                <textarea id="textContent" rows="4">文本1|文本2|文本3|文本4|文本5|文本6</textarea>
+                <p class="note">每个文本框对应一个白框，用竖线|分隔。例如：文本1|文本2|文本3</p>
+            </div>
+            
+            <!-- 文本框字体选择器 -->
+            <div class="form-group">
+                <label>文本框字体</label>
+                <div class="font-family-selector">
+                    <div class="font-option">
+                        <input type="radio" id="textFontSong" name="textFont" value="'SimSun', 'Songti SC', serif">
+                        <label for="textFontSong" style="font-family: 'SimSun', 'Songti SC', serif;">宋体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="textFontKai" name="textFont" value="'KaiTi', 'STKaiti', serif" checked>
+                        <label for="textFontKai" style="font-family: 'KaiTi', 'STKaiti', serif;">楷体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="textFontHei" name="textFont" value="'SimHei', 'STHeiti', sans-serif">
+                        <label for="textFontHei" style="font-family: 'SimHei', 'STHeiti', sans-serif;">黑体</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="boxLabels">白框上方标签 (用竖线|分隔，可选)</label>
+                <textarea id="boxLabels" rows="3">标签1|标签2|标签3|标签4|标签5|标签6</textarea>
+                <p class="note">设置上方标签，一行写不下会自动换行，但是可能出现无法对齐的情况</p>
+            </div>
+            
+            <!-- 标签字体选择器 -->
+            <div class="form-group">
+                <label>标签字体</label>
+                <div class="font-family-selector">
+                    <div class="font-option">
+                        <input type="radio" id="labelFontSong" name="labelFont" value="'SimSun', 'Songti SC', serif">
+                        <label for="labelFontSong" style="font-family: 'SimSun', 'Songti SC', serif;">宋体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="labelFontKai" name="labelFont" value="'KaiTi', 'STKaiti', serif">
+                        <label for="labelFontKai" style="font-family: 'KaiTi', 'STKaiti', serif;">楷体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="labelFontHei" name="labelFont" value="'SimHei', 'STHeiti', sans-serif" checked>
+                        <label for="labelFontHei" style="font-family: 'SimHei', 'STHeiti', sans-serif;">黑体</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>文本颜色</label>
+                <div class="color-input">
+                    <input type="color" id="textColor" value="#ffffff">
+                    <span>白色</span>
+                </div>
+            </div>
+            
+            <!-- 文本框单独改色功能 -->
+            <div class="form-group">
+                <div class="feature-toggle">
+                    <input type="checkbox" id="enableTextFeature2">
+                    <label for="enableTextFeature2" style="font-weight: bold; color: #4CAF50;">开启功能：单独设置每个文本框颜色</label>
+                </div>
+                <div class="individual-colors-container" id="textIndividualColorsContainer">
+                    <!-- 动态生成的文本框单独颜色设置项将放在这里 -->
+                </div>
+                <p class="note">开启后，可以为每个文本框单独设置颜色，关闭则使用统一的文本颜色</p>
+            </div>
+            
+            <!-- 文本框单独字号设置 -->
+            <div class="form-group">
+                <div class="feature-toggle">
+                    <input type="checkbox" id="enableTextSizeFeature">
+                    <label for="enableTextSizeFeature" style="font-weight: bold; color: #FF9800;">开启功能：单独设置每个文本框字号</label>
+                </div>
+                <div class="individual-font-sizes-container" id="textIndividualSizesContainer">
+                    <!-- 动态生成的文本框单独字号设置项 -->
+                </div>
+                <p class="note">开启后，可以为每个文本框单独设置字号，关闭则使用统一的文本字号</p>
+            </div>
+            
+            <div class="form-group">
+                <label>标签颜色</label>
+                <div class="color-input">
+                    <input type="color" id="labelColor" value="#ff0000">
+                    <span>红色</span>
+                </div>
+            </div>
+            
+            <!-- 标签单独改色功能 -->
+            <div class="form-group">
+                <div class="feature-toggle">
+                    <input type="checkbox" id="enableLabelFeature2">
+                    <label for="enableLabelFeature2" style="font-weight: bold; color: #FF9800;">开启功能：单独设置每个标签颜色</label>
+                </div>
+                <div class="individual-colors-container" id="labelIndividualColorsContainer">
+                    <!-- 动态生成的标签单独颜色设置项将放在这里 -->
+                </div>
+                <p class="note">开启后，可以为每个标签单独设置颜色，关闭则使用统一的标签颜色</p>
+            </div>
+            
+            <!-- 标签单独字号设置 -->
+            <div class="form-group">
+                <div class="feature-toggle">
+                    <input type="checkbox" id="enableLabelSizeFeature">
+                    <label for="enableLabelSizeFeature" style="font-weight: bold; color: #9C27B0;">开启功能：单独设置每个标签字号</label>
+                </div>
+                <div class="individual-font-sizes-container" id="labelIndividualSizesContainer">
+                    <!-- 动态生成的标签单独字号设置项 -->
+                </div>
+                <p class="note">开启后，可以为每个标签单独设置字号，关闭则使用统一的标签字号</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="textSize">文本字号 (px)</label>
+                <div class="range-container">
+                    <input type="range" id="textSize" min="12" max="40" value="16">
+                    <span class="range-value" id="textSizeValue">16px</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="labelSize">标签字号 (px)</label>
+                <div class="range-container">
+                    <input type="range" id="labelSize" min="12" max="40" value="16">
+                    <span class="range-value" id="labelSizeValue">16px</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>文本对齐方式</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="textAlignLeft" name="textAlign" value="left">
+                        <label for="textAlignLeft">靠左</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="textAlignCenter" name="textAlign" value="center" checked>
+                        <label for="textAlignCenter">居中</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="textAlignRight" name="textAlign" value="right">
+                        <label for="textAlignRight">靠右</label>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 class="section-title">底部信息</h2>
+            <div class="form-group">
+                <label for="creatorText">制表人</label>
+                <input type="text" id="creatorText" value="制表人：填了就会显示，不填就不显示">
+            </div>
+            
+            <div class="form-group">
+                <label for="fillerText">填表人</label>
+                <input type="text" id="fillerText" value="也可以当底部碎碎念来用">
+            </div>
+            
+            <div class="button-group">
+                <button class="primary-btn" id="updatePreview">更新预览</button>
+                <button class="secondary-btn" id="resetSettings">重置设置</button>
+                <button class="save-btn" id="saveImage">保存为图片</button>
+            </div>
+            <div id="downloadStatus" class="download-status"></div>
+        </div>
+    </div>
+    
+    <!-- 手机端遮罩层 -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
+    
+    <div class="header">
+        <h1>一个简单的表格生成器</h1>
+        <p>工具制作：@村里最乱炒的坏厨</p>
+        <div class="layout-rules">
+            <h3>智能布局规则</h3>
+            <div class="rules-list">
+                <div class="rule-item"><span class="number">1</span> ≤4个时，放一排</div>
+                <div class="rule-item"><span class="number">2</span> >4个时，放两排或三排，每排最多四个</div>
+                <div class="rule-item"><span class="number">3</span> 3的倍数时，优先每行放3个</div>
+            </div>
+            
+            <div class="layout-example">
+                <div class="layout-example-item">2个：1行2个</div>
+                <div class="layout-example-item">3个：1行3个</div>
+                <div class="layout-example-item">4个：1行4个</div>
+                <div class="layout-example-item">5个：第一行3个，第二行2个</div>
+                <div class="layout-example-item">6个：2行3个</div>
+                <div class="layout-example-item">7个：第一行4个，第二行3个</div>
+                <div class="layout-example-item">8个：2行4个</div>
+                <div class="layout-example-item">9个：3行3个</div>
+                <div class="layout-example-item">10个：第一行4个，第二行3个，第三行3个</div>
+                <div class="layout-example-item">11个：第一行4个，第二行4个，第三行3个</div>
+                <div class="layout-example-item">12个：3行4列</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- 桌面端设置面板 -->
+        <div class="settings-panel desktop-settings" id="desktopSettingsPanel">
+            <!-- 滚动指示器 -->
+            <div class="scroll-indicator" id="scrollIndicator">
+                <button class="scroll-btn up" id="scrollUpBtn">↑</button>
+                <div class="scroll-track" id="scrollTrack">
+                    <div class="scroll-thumb" id="scrollThumb"></div>
+                </div>
+                <button class="scroll-btn down" id="scrollDownBtn">↓</button>
+            </div>
+            
+            <h2 class="section-title">标题设置</h2>
+            <div class="form-group">
+                <label for="titleTextDesktop">标题内容 (用竖线|分隔各部分)</label>
+                <input type="text" id="titleTextDesktop" value="这是|标题">
+                <p class="note">用竖线|分隔标题的各个部分，开启单独改色功能后可以为每部分设置不同颜色</p>
+            </div>
+            <div class="form-group">
+                <label for="subtitleTextDesktop">副标题/说明</label>
+                <input type="text" id="subtitleTextDesktop" value="这是副标题/说明">
+                <p class="note">副标题会显示在主标题下方，用较小字体</p>
+            </div>
+            
+            <!-- 字体选择器 -->
+            <div class="form-group">
+                <label>标题字体</label>
+                <div class="font-family-selector">
+                    <div class="font-option">
+                        <input type="radio" id="titleFontSongDesktop" name="titleFontDesktop" value="'SimSun', 'Songti SC', serif" checked>
+                        <label for="titleFontSongDesktop" style="font-family: 'SimSun', 'Songti SC', serif;">宋体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="titleFontKaiDesktop" name="titleFontDesktop" value="'KaiTi', 'STKaiti', serif">
+                        <label for="titleFontKaiDesktop" style="font-family: 'KaiTi', 'STKaiti', serif;">楷体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="titleFontHeiDesktop" name="titleFontDesktop" value="'SimHei', 'STHeiti', sans-serif">
+                        <label for="titleFontHeiDesktop" style="font-family: 'SimHei', 'STHeiti', sans-serif;">黑体</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 副标题字体选择器 -->
+            <div class="form-group">
+                <label>副标题字体</label>
+                <div class="font-family-selector">
+                    <div class="font-option">
+                        <input type="radio" id="subtitleFontSongDesktop" name="subtitleFontDesktop" value="'SimSun', 'Songti SC', serif">
+                        <label for="subtitleFontSongDesktop" style="font-family: 'SimSun', 'Songti SC', serif;">宋体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="subtitleFontKaiDesktop" name="subtitleFontDesktop" value="'KaiTi', 'STKaiti', serif">
+                        <label for="subtitleFontKaiDesktop" style="font-family: 'KaiTi', 'STKaiti', serif;">楷体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="subtitleFontHeiDesktop" name="subtitleFontDesktop" value="'SimHei', 'STHeiti', sans-serif" checked>
+                        <label for="subtitleFontHeiDesktop" style="font-family: 'SimHei', 'STHeiti', sans-serif;">黑体</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>标题颜色</label>
+                <div class="color-input">
+                    <input type="color" id="titleColorDesktop" value="#ffffff">
+                    <span>白色</span>
+                </div>
+            </div>
+            
+            <!-- 标题单独改色功能 -->
+            <div class="form-group">
+                <div class="feature-toggle">
+                    <input type="checkbox" id="enableTitleColorFeatureDesktop">
+                    <label for="enableTitleColorFeatureDesktop" style="font-weight: bold; color: #9C27B0;">开启功能：单独设置标题各部分颜色</label>
+                </div>
+                <div class="individual-title-colors-container" id="titleIndividualColorsContainerDesktop">
+                    <!-- 动态生成的标题单独颜色设置项 -->
+                </div>
+                <p class="note">开启后，可以为标题的每个部分单独设置颜色，关闭则使用统一的标题颜色</p>
+            </div>
+            
+            <!-- 标题单独字号设置 -->
+            <div class="form-group">
+                <div class="feature-toggle">
+                    <input type="checkbox" id="enableTitleSizeFeatureDesktop">
+                    <label for="enableTitleSizeFeatureDesktop" style="font-weight: bold; color: #00BCD4;">开启功能：单独设置标题各部分字号</label>
+                </div>
+                <div class="individual-font-sizes-container" id="titleIndividualSizesContainerDesktop">
+                    <!-- 动态生成的标题单独字号设置项 -->
+                </div>
+                <p class="note">开启后，可以为标题的每个部分单独设置字号，关闭则使用统一的标题字号</p>
+                <p class="warning-note">注意：使用此功能时需打开上方"单独设置标题各部分颜色"功能。</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="titleSizeDesktop">标题字号 (px)</label>
+                <div class="range-container">
+                    <input type="range" id="titleSizeDesktop" min="16" max="60" value="32">
+                    <span class="range-value" id="titleSizeValueDesktop">32px</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>标题对齐方式</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="titleAlignLeftDesktop" name="titleAlignDesktop" value="left">
+                        <label for="titleAlignLeftDesktop">靠左</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="titleAlignCenterDesktop" name="titleAlignDesktop" value="center" checked>
+                        <label for="titleAlignCenterDesktop">居中</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="titleAlignRightDesktop" name="titleAlignDesktop" value="right">
+                        <label for="titleAlignRightDesktop">靠右</label>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 class="section-title">白框设置</h2>
+            <div class="form-group">
+                <label for="boxCountDesktop">白框数量 (2-12个)</label>
+                <div class="range-container">
+                    <input type="range" id="boxCountDesktop" min="2" max="12" value="6">
+                    <span class="range-value" id="boxCountValueDesktop">6个</span>
+                </div>
+                <div class="layout-info">
+                    <h4>当前布局规则</h4>
+                    <p id="layoutRuleTextDesktop">6个是3的倍数，将使用2行3列布局（每行3个）</p>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="boxSizeDesktop">白框尺寸 (px)</label>
+                <div class="range-container">
+                    <input type="range" id="boxSizeDesktop" min="60" max="200" value="100">
+                    <span class="range-value" id="boxSizeValueDesktop">100px</span>
+                </div>
+            </div>
+            
+            <!-- 单独设置每个白框尺寸 -->
+            <div class="form-group">
+                <div class="feature-toggle">
+                    <input type="checkbox" id="enableBoxSizeFeatureDesktop">
+                    <label for="enableBoxSizeFeatureDesktop" style="font-weight: bold; color: #FF5722;">开启功能：单独设置每个白框尺寸</label>
+                </div>
+                <div class="individual-sizes-container" id="boxIndividualSizesContainerDesktop">
+                    <!-- 动态生成的白框单独尺寸设置项将放在这里 -->
+                </div>
+                <p class="note">开启后，可以为每个白框单独设置尺寸，关闭则使用统一的尺寸</p>
+            </div>
+            
+            <h2 class="section-title">文本框设置</h2>
+            <div class="form-group">
+                <label for="textContentDesktop">文本框内容 (用竖线|分隔)</label>
+                <textarea id="textContentDesktop" rows="4">文本1|文本2|文本3|文本4|文本5|文本6</textarea>
+                <p class="note">每个文本框对应一个白框，用竖线|分隔。例如：文本1|文本2|文本3</p>
+            </div>
+            
+            <!-- 文本框字体选择器 -->
+            <div class="form-group">
+                <label>文本框字体</label>
+                <div class="font-family-selector">
+                    <div class="font-option">
+                        <input type="radio" id="textFontSongDesktop" name="textFontDesktop" value="'SimSun', 'Songti SC', serif">
+                        <label for="textFontSongDesktop" style="font-family: 'SimSun', 'Songti SC', serif;">宋体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="textFontKaiDesktop" name="textFontDesktop" value="'KaiTi', 'STKaiti', serif" checked>
+                        <label for="textFontKaiDesktop" style="font-family: 'KaiTi', 'STKaiti', serif;">楷体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="textFontHeiDesktop" name="textFontDesktop" value="'SimHei', 'STHeiti', sans-serif">
+                        <label for="textFontHeiDesktop" style="font-family: 'SimHei', 'STHeiti', sans-serif;">黑体</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="boxLabelsDesktop">白框上方标签 (用竖线|分隔，可选)</label>
+                <textarea id="boxLabelsDesktop" rows="3">标签1|标签2|标签3|标签4|标签5|标签6</textarea>
+                <p class="note">设置上方标签，一行写不下会自动换行，但是可能出现无法对齐的情况</p>
+            </div>
+            
+            <!-- 标签字体选择器 -->
+            <div class="form-group">
+                <label>标签字体</label>
+                <div class="font-family-selector">
+                    <div class="font-option">
+                        <input type="radio" id="labelFontSongDesktop" name="labelFontDesktop" value="'SimSun', 'Songti SC', serif">
+                        <label for="labelFontSongDesktop" style="font-family: 'SimSun', 'Songti SC', serif;">宋体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="labelFontKaiDesktop" name="labelFontDesktop" value="'KaiTi', 'STKaiti', serif">
+                        <label for="labelFontKaiDesktop" style="font-family: 'KaiTi', 'STKaiti', serif;">楷体</label>
+                    </div>
+                    <div class="font-option">
+                        <input type="radio" id="labelFontHeiDesktop" name="labelFontDesktop" value="'SimHei', 'STHeiti', sans-serif" checked>
+                        <label for="labelFontHeiDesktop" style="font-family: 'SimHei', 'STHeiti', sans-serif;">黑体</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>文本颜色</label>
+                <div class="color-input">
+                    <input type="color" id="textColorDesktop" value="#ffffff">
+                    <span>白色</span>
+                </div>
+            </div>
+            
+            <!-- 文本框单独改色功能 -->
+            <div class="form-group">
+                <div class="feature-toggle">
+                    <input type="checkbox" id="enableTextFeature2Desktop">
+                    <label for="enableTextFeature2Desktop" style="font-weight: bold; color: #4CAF50;">开启功能：单独设置每个文本框颜色</label>
+                </div>
+                <div class="individual-colors-container" id="textIndividualColorsContainerDesktop">
+                    <!-- 动态生成的文本框单独颜色设置项将放在这里 -->
+                </div>
+                <p class="note">开启后，可以为每个文本框单独设置颜色，关闭则使用统一的文本颜色</p>
+            </div>
+            
+            <!-- 文本框单独字号设置 -->
+            <div class="form-group">
+                <div class="feature-toggle">
+                    <input type="checkbox" id="enableTextSizeFeatureDesktop">
+                    <label for="enableTextSizeFeatureDesktop" style="font-weight: bold; color: #FF9800;">开启功能：单独设置每个文本框字号</label>
+                </div>
+                <div class="individual-font-sizes-container" id="textIndividualSizesContainerDesktop">
+                    <!-- 动态生成的文本框单独字号设置项 -->
+                </div>
+                <p class="note">开启后，可以为每个文本框单独设置字号，关闭则使用统一的文本字号</p>
+            </div>
+            
+            <div class="form-group">
+                <label>标签颜色</label>
+                <div class="color-input">
+                    <input type="color" id="labelColorDesktop" value="#ff0000">
+                    <span>红色</span>
+                </div>
+            </div>
+            
+            <!-- 标签单独改色功能 -->
+            <div class="form-group">
+                <div class="feature-toggle">
+                    <input type="checkbox" id="enableLabelFeature2Desktop">
+                    <label for="enableLabelFeature2Desktop" style="font-weight: bold; color: #FF9800;">开启功能：单独设置每个标签颜色</label>
+                </div>
+                <div class="individual-colors-container" id="labelIndividualColorsContainerDesktop">
+                    <!-- 动态生成的标签单独颜色设置项将放在这里 -->
+                </div>
+                <p class="note">开启后，可以为每个标签单独设置颜色，关闭则使用统一的标签颜色</p>
+            </div>
+            
+            <!-- 标签单独字号设置 -->
+            <div class="form-group">
+                <div class="feature-toggle">
+                    <input type="checkbox" id="enableLabelSizeFeatureDesktop">
+                    <label for="enableLabelSizeFeatureDesktop" style="font-weight: bold; color: #9C27B0;">开启功能：单独设置每个标签字号</label>
+                </div>
+                <div class="individual-font-sizes-container" id="labelIndividualSizesContainerDesktop">
+                    <!-- 动态生成的标签单独字号设置项 -->
+                </div>
+                <p class="note">开启后，可以为每个标签单独设置字号，关闭则使用统一的标签字号</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="textSizeDesktop">文本字号 (px)</label>
+                <div class="range-container">
+                    <input type="range" id="textSizeDesktop" min="12" max="40" value="16">
+                    <span class="range-value" id="textSizeValueDesktop">16px</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="labelSizeDesktop">标签字号 (px)</label>
+                <div class="range-container">
+                    <input type="range" id="labelSizeDesktop" min="12" max="40" value="16">
+                    <span class="range-value" id="labelSizeValueDesktop">16px</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>文本对齐方式</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="textAlignLeftDesktop" name="textAlignDesktop" value="left">
+                        <label for="textAlignLeftDesktop">靠左</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="textAlignCenterDesktop" name="textAlignDesktop" value="center" checked>
+                        <label for="textAlignCenterDesktop">居中</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="textAlignRightDesktop" name="textAlignDesktop" value="right">
+                        <label for="textAlignRightDesktop">靠右</label>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 class="section-title">底部信息</h2>
+            <div class="form-group">
+                <label for="creatorTextDesktop">制表人</label>
+                <input type="text" id="creatorTextDesktop" value="制表人：填了就会显示，不填就不显示">
+            </div>
+            
+            <div class="form-group">
+                <label for="fillerTextDesktop">填表人</label>
+                <input type="text" id="fillerTextDesktop" value="也可以当底部碎碎念来用">
+            </div>
+            
+            <div class="button-group">
+                <button class="primary-btn" id="updatePreviewDesktop">更新预览</button>
+                <button class="secondary-btn" id="resetSettingsDesktop">重置设置</button>
+                <button class="save-btn" id="saveImageDesktop">保存为图片</button>
+            </div>
+            <div id="downloadStatusDesktop" class="download-status"></div>
+        </div>
+        
+        <div class="preview-panel">
+            <h2 class="section-title">实时预览</h2>
+            <div class="current-layout-info">
+                <h4>当前布局信息</h4>
+                <p id="currentLayoutText">6个白框，使用2行3列布局（每行3个）</p>
+            </div>
+            <div class="preview-container" id="previewContainer">
+                <!-- 预览内容将在这里动态生成 -->
+            </div>
+        </div>
+    </div>
+    <script>
+        // 获取DOM元素
+        // 移动端元素
+        const mobileToggleBtn = document.getElementById('mobileToggleBtn');
+        const mobileSidebar = document.getElementById('mobileSidebar');
+        const closeSidebar = document.getElementById('closeSidebar');
+        const mobileOverlay = document.getElementById('mobileOverlay');
+        
+        // 桌面端滚动控制元素
+        const desktopSettingsPanel = document.getElementById('desktopSettingsPanel');
+        const scrollIndicator = document.getElementById('scrollIndicator');
+        const scrollUpBtn = document.getElementById('scrollUpBtn');
+        const scrollDownBtn = document.getElementById('scrollDownBtn');
+        const scrollTrack = document.getElementById('scrollTrack');
+        const scrollThumb = document.getElementById('scrollThumb');
+        
+        // 桌面端元素
+        let boxCountInput, boxCountValue, boxSizeInput, boxSizeValue, titleSizeInput, titleSizeValue, textSizeInput, textSizeValue;
+        let updatePreviewBtn, resetSettingsBtn, saveImageBtn;
+        let previewContainer, layoutRuleText, currentLayoutText, downloadStatus;
+        let enableTextFeature2Checkbox, textIndividualColorsContainer, enableLabelFeature2Checkbox, labelIndividualColorsContainer;
+        let enableBoxSizeFeatureCheckbox, boxIndividualSizesContainer, enableTitleColorFeatureCheckbox, titleIndividualColorsContainer;
+        let enableTitleSizeFeatureCheckbox, titleIndividualSizesContainer, enableTextSizeFeatureCheckbox, textIndividualSizesContainer;
+        let enableLabelSizeFeatureCheckbox, labelIndividualSizesContainer;
+        let labelSizeInput, labelSizeValue;
+        
+        // 存储单独设置的数组
+        let textIndividualColors = [];
+        let labelIndividualColors = [];
+        let boxIndividualSizes = []; // 存储每个白框的单独尺寸
+        let titleIndividualColors = []; // 存储标题各部分的颜色
+        let titleIndividualSizes = []; // 存储标题各部分的字号
+        let textIndividualSizes = []; // 存储文本框各部分的字号
+        let labelIndividualSizes = []; // 存储标签各部分的字号
+        
+        // 滚动控制变量
+        let scrollThumbDragging = false;
+        let scrollTrackHeight = 100;
+        let thumbHeight = 30;
+        
+        // 初始化函数，根据设备类型选择使用哪个设置面板
+        function initElements() {
+            const isMobile = window.innerWidth <= 1100;
+            
+            if (isMobile) {
+                // 使用移动端设置面板
+                boxCountInput = document.getElementById('boxCount');
+                boxCountValue = document.getElementById('boxCountValue');
+                boxSizeInput = document.getElementById('boxSize');
+                boxSizeValue = document.getElementById('boxSizeValue');
+                titleSizeInput = document.getElementById('titleSize');
+                titleSizeValue = document.getElementById('titleSizeValue');
+                textSizeInput = document.getElementById('textSize');
+                textSizeValue = document.getElementById('textSizeValue');
+                labelSizeInput = document.getElementById('labelSize');
+                labelSizeValue = document.getElementById('labelSizeValue');
+                updatePreviewBtn = document.getElementById('updatePreview');
+                resetSettingsBtn = document.getElementById('resetSettings');
+                saveImageBtn = document.getElementById('saveImage');
+                layoutRuleText = document.getElementById('layoutRuleText');
+                downloadStatus = document.getElementById('downloadStatus');
+                
+                // 功能相关元素
+                enableTextFeature2Checkbox = document.getElementById('enableTextFeature2');
+                textIndividualColorsContainer = document.getElementById('textIndividualColorsContainer');
+                enableLabelFeature2Checkbox = document.getElementById('enableLabelFeature2');
+                labelIndividualColorsContainer = document.getElementById('labelIndividualColorsContainer');
+                enableBoxSizeFeatureCheckbox = document.getElementById('enableBoxSizeFeature');
+                boxIndividualSizesContainer = document.getElementById('boxIndividualSizesContainer');
+                enableTitleColorFeatureCheckbox = document.getElementById('enableTitleColorFeature');
+                titleIndividualColorsContainer = document.getElementById('titleIndividualColorsContainer');
+                enableTitleSizeFeatureCheckbox = document.getElementById('enableTitleSizeFeature');
+                titleIndividualSizesContainer = document.getElementById('titleIndividualSizesContainer');
+                enableTextSizeFeatureCheckbox = document.getElementById('enableTextSizeFeature');
+                textIndividualSizesContainer = document.getElementById('textIndividualSizesContainer');
+                enableLabelSizeFeatureCheckbox = document.getElementById('enableLabelSizeFeature');
+                labelIndividualSizesContainer = document.getElementById('labelIndividualSizesContainer');
+                
+                // 隐藏桌面端设置面板
+                document.querySelector('.desktop-settings').style.display = 'none';
+                // 隐藏滚动指示器
+                if (scrollIndicator) scrollIndicator.style.display = 'none';
+            } else {
+                // 使用桌面端设置面板
+                boxCountInput = document.getElementById('boxCountDesktop');
+                boxCountValue = document.getElementById('boxCountValueDesktop');
+                boxSizeInput = document.getElementById('boxSizeDesktop');
+                boxSizeValue = document.getElementById('boxSizeValueDesktop');
+                titleSizeInput = document.getElementById('titleSizeDesktop');
+                titleSizeValue = document.getElementById('titleSizeValueDesktop');
+                textSizeInput = document.getElementById('textSizeDesktop');
+                textSizeValue = document.getElementById('textSizeValueDesktop');
+                labelSizeInput = document.getElementById('labelSizeDesktop');
+                labelSizeValue = document.getElementById('labelSizeValueDesktop');
+                updatePreviewBtn = document.getElementById('updatePreviewDesktop');
+                resetSettingsBtn = document.getElementById('resetSettingsDesktop');
+                saveImageBtn = document.getElementById('saveImageDesktop');
+                layoutRuleText = document.getElementById('layoutRuleTextDesktop');
+                downloadStatus = document.getElementById('downloadStatusDesktop');
+                
+                // 功能相关元素
+                enableTextFeature2Checkbox = document.getElementById('enableTextFeature2Desktop');
+                textIndividualColorsContainer = document.getElementById('textIndividualColorsContainerDesktop');
+                enableLabelFeature2Checkbox = document.getElementById('enableLabelFeature2Desktop');
+                labelIndividualColorsContainer = document.getElementById('labelIndividualColorsContainerDesktop');
+                enableBoxSizeFeatureCheckbox = document.getElementById('enableBoxSizeFeatureDesktop');
+                boxIndividualSizesContainer = document.getElementById('boxIndividualSizesContainerDesktop');
+                enableTitleColorFeatureCheckbox = document.getElementById('enableTitleColorFeatureDesktop');
+                titleIndividualColorsContainer = document.getElementById('titleIndividualColorsContainerDesktop');
+                enableTitleSizeFeatureCheckbox = document.getElementById('enableTitleSizeFeatureDesktop');
+                titleIndividualSizesContainer = document.getElementById('titleIndividualSizesContainerDesktop');
+                enableTextSizeFeatureCheckbox = document.getElementById('enableTextSizeFeatureDesktop');
+                textIndividualSizesContainer = document.getElementById('textIndividualSizesContainerDesktop');
+                enableLabelSizeFeatureCheckbox = document.getElementById('enableLabelSizeFeatureDesktop');
+                labelIndividualSizesContainer = document.getElementById('labelIndividualSizesContainerDesktop');
+                
+                // 隐藏移动端元素
+                mobileToggleBtn.style.display = 'none';
+                mobileSidebar.style.display = 'none';
+                mobileOverlay.style.display = 'none';
+                
+                // 显示滚动指示器
+                if (scrollIndicator) scrollIndicator.style.display = 'flex';
+                
+                // 初始化滚动控制
+                initScrollControl();
+            }
+            
+            currentLayoutText = document.getElementById('currentLayoutText');
+            previewContainer = document.getElementById('previewContainer');
+        }
+        
+        // 初始化桌面端滚动控制
+        function initScrollControl() {
+            if (!desktopSettingsPanel || !scrollIndicator || !scrollTrack || !scrollThumb) {
+                return;
+            }
+            
+            // 更新滚动条位置和滑块位置
+            function updateScrollUI() {
+                const panel = desktopSettingsPanel;
+                const scrollPercentage = panel.scrollTop / (panel.scrollHeight - panel.clientHeight);
+                
+                // 更新滑块位置
+                const thumbTop = scrollPercentage * (scrollTrackHeight - thumbHeight);
+                scrollThumb.style.top = `${thumbTop}px`;
+                
+                // 根据滚动位置调整滚动指示器透明度
+                if (panel.scrollTop > 10 || panel.scrollTop < panel.scrollHeight - panel.clientHeight - 10) {
+                    scrollIndicator.style.opacity = '1';
+                } else {
+                    scrollIndicator.style.opacity = '0.7';
+                }
+            }
+            
+            // 向上滚动
+            scrollUpBtn.addEventListener('click', function() {
+                desktopSettingsPanel.scrollBy({
+                    top: -100,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // 向下滚动
+            scrollDownBtn.addEventListener('click', function() {
+                desktopSettingsPanel.scrollBy({
+                    top: 100,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // 拖动滑块滚动
+            scrollThumb.addEventListener('mousedown', function(e) {
+                scrollThumbDragging = true;
+                const trackRect = scrollTrack.getBoundingClientRect();
+                const thumbRect = scrollThumb.getBoundingClientRect();
+                const initialY = e.clientY;
+                const initialTop = thumbRect.top - trackRect.top;
+                
+                function onMouseMove(e) {
+                    if (!scrollThumbDragging) return;
+                    
+                    const deltaY = e.clientY - initialY;
+                    let newTop = initialTop + deltaY;
+                    
+                    // 限制滑块在轨道内
+                    newTop = Math.max(0, Math.min(scrollTrackHeight - thumbHeight, newTop));
+                    
+                    // 更新滑块位置
+                    scrollThumb.style.top = `${newTop}px`;
+                    
+                    // 计算滚动位置
+                    const scrollPercentage = newTop / (scrollTrackHeight - thumbHeight);
+                    const panel = desktopSettingsPanel;
+                    const maxScroll = panel.scrollHeight - panel.clientHeight;
+                    panel.scrollTop = scrollPercentage * maxScroll;
+                }
+                
+                function onMouseUp() {
+                    scrollThumbDragging = false;
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                }
+                
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+                
+                e.preventDefault();
+            });
+            
+            // 点击轨道跳转
+            scrollTrack.addEventListener('click', function(e) {
+                const trackRect = scrollTrack.getBoundingClientRect();
+                const clickY = e.clientY - trackRect.top;
+                
+                // 计算点击位置对应的滚动百分比
+                let clickPercentage = clickY / scrollTrackHeight;
+                clickPercentage = Math.max(0, Math.min(1, clickPercentage));
+                
+                // 设置滑块位置
+                const thumbTop = clickPercentage * (scrollTrackHeight - thumbHeight);
+                scrollThumb.style.top = `${thumbTop}px`;
+                
+                // 滚动到对应位置
+                const panel = desktopSettingsPanel;
+                const maxScroll = panel.scrollHeight - panel.clientHeight;
+                panel.scrollTop = clickPercentage * maxScroll;
+            });
+            
+            // 监听面板滚动事件
+            desktopSettingsPanel.addEventListener('scroll', updateScrollUI);
+            
+            // 初始更新UI
+            updateScrollUI();
+            
+            // 监听窗口大小变化，重新计算
+            window.addEventListener('resize', function() {
+                // 重新计算轨道高度
+                const trackRect = scrollTrack.getBoundingClientRect();
+                scrollTrackHeight = trackRect.height;
+                
+                // 更新滑块高度比例
+                const panel = desktopSettingsPanel;
+                const visibleRatio = panel.clientHeight / panel.scrollHeight;
+                thumbHeight = Math.max(30, scrollTrackHeight * visibleRatio);
+                scrollThumb.style.height = `${thumbHeight}px`;
+                
+                updateScrollUI();
+            });
+            
+            // 初始化滑块高度
+            const trackRect = scrollTrack.getBoundingClientRect();
+            scrollTrackHeight = trackRect.height;
+            const panel = desktopSettingsPanel;
+            const visibleRatio = panel.clientHeight / panel.scrollHeight;
+            thumbHeight = Math.max(30, scrollTrackHeight * visibleRatio);
+            scrollThumb.style.height = `${thumbHeight}px`;
+        }
+        
+        // 手机端侧边栏控制
+        function initMobileSidebar() {
+            mobileToggleBtn.addEventListener('click', function() {
+                mobileSidebar.classList.add('active');
+                mobileOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            closeSidebar.addEventListener('click', function() {
+                closeSidebarFunc();
+            });
+            
+            mobileOverlay.addEventListener('click', function() {
+                closeSidebarFunc();
+            });
+            
+            // 点击预览区域也关闭侧边栏
+            document.querySelector('.preview-panel').addEventListener('click', function() {
+                if (window.innerWidth <= 1100 && mobileSidebar.classList.contains('active')) {
+                    closeSidebarFunc();
+                }
+            });
+        }
+        
+        function closeSidebarFunc() {
+            mobileSidebar.classList.remove('active');
+            mobileOverlay.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+        
+        // 智能布局计算函数
+        function calculateLayout(boxCount) {
+            let rows, columns, layoutDescription;
+            if (boxCount % 3 === 0) {
+                // 规则3：3的倍数，优先每行3个
+                columns = 3;
+                rows = boxCount / 3;
+                layoutDescription = `${boxCount}个是3的倍数，将使用${rows}行${columns}列布局（每行3个）`;
+            } else if (boxCount <= 4) {
+                // 规则1：≤4个时，放一排
+                columns = boxCount;
+                rows = 1;
+                layoutDescription = `${boxCount}个，将使用1行${columns}列布局`;
+            } else {
+                // 规则2：>4个时，放两排或三排，每排最多四个
+                rows = 2;
+                const firstRowCount = Math.ceil(boxCount / 2);
+                const secondRowCount = boxCount - firstRowCount;
+                
+                // 每排最多四个
+                const firstRowColumns = Math.min(firstRowCount, 4);
+                const secondRowColumns = Math.min(secondRowCount, 4);
+                
+                // 特殊情况的处理
+                if (boxCount === 5) {
+                    columns = 3; // 第一行3个，第二行2个
+                    layoutDescription = `${boxCount}个，将使用2行布局（第一行3个，第二行2个）`;
+                } else if (boxCount === 7) {
+                    columns = 4; // 第一行4个，第二行3个
+                    layoutDescription = `${boxCount}个，将使用2行布局（第一行4个，第二行3个）`;
+                } else if (boxCount === 8) {
+                    columns = 4; // 每行4个
+                    layoutDescription = `${boxCount}个，将使用2行4列布局（每行4个）`;
+                } else if (boxCount === 10) {
+                    // 10个：第一行4个，第二行3个，第三行3个
+                    rows = 3;
+                    columns = 4;
+                    layoutDescription = `${boxCount}个，将使用3行布局（第一行4个，第二行3个，第三行3个）`;
+                } else if (boxCount === 11) {
+                    // 11个：第一行4个，第二行4个，第三行3个
+                    rows = 3;
+                    columns = 4;
+                    layoutDescription = `${boxCount}个，将使用3行布局（第一行4个，第二行4个，第三行3个）`;
+                } else if (boxCount === 12) {
+                    // 12个：3行4列
+                    rows = 3;
+                    columns = 4;
+                    layoutDescription = `${boxCount}个，将使用3行4列布局（每行4个）`;
+                } else {
+                    // 其他情况（6个、9个已在第一个条件处理）
+                    columns = Math.max(firstRowColumns, secondRowColumns);
+                    layoutDescription = `${boxCount}个，将使用2行布局（第一行${firstRowCount}个，第二行${secondRowCount}个）`;
+                }
+            }
+            return { rows, columns, layoutDescription };
+        }
+        
+        // 生成文本框单独颜色设置界面
+        function generateTextIndividualColorSettings(boxCount) {
+            textIndividualColorsContainer.innerHTML = '';
+            // 获取文本框内容
+            const textContent = document.getElementById('textContent').value.split('|').map(t => t.trim());
+            for (let i = 0; i < boxCount; i++) {
+                const colorItem = document.createElement('div');
+                colorItem.className = 'individual-color-item';
+                const label = document.createElement('label');
+                label.textContent = `文本框 ${i+1}:`;
+                label.title = textContent[i] || `文本${i+1}`;
+                const colorInput = document.createElement('input');
+                colorInput.type = 'color';
+                colorInput.value = textIndividualColors[i] || '#ffffff';
+                colorInput.dataset.index = i;
+                const textInput = document.createElement('input');
+                textInput.type = 'text';
+                textInput.value = textContent[i] || `文本${i+1}`;
+                textInput.placeholder = `文本框 ${i+1} 内容`;
+                textInput.dataset.index = i;
+                colorInput.addEventListener('input', function() {
+                    const index = parseInt(this.dataset.index);
+                    textIndividualColors[index] = this.value;
+                    generatePreview();
+                });
+                textInput.addEventListener('input', function() {
+                    const index = parseInt(this.dataset.index);
+                    const textContentArray = document.getElementById('textContent').value.split('|').map(t => t.trim());
+                    textContentArray[index] = this.value;
+                    document.getElementById('textContent').value = textContentArray.join('|');
+                    generatePreview();
+                });
+                colorItem.appendChild(label);
+                colorItem.appendChild(colorInput);
+                colorItem.appendChild(textInput);
+                textIndividualColorsContainer.appendChild(colorItem);
+                // 初始化颜色数组
+                if (!textIndividualColors[i]) {
+                    textIndividualColors[i] = '#ffffff';
+                }
+            }
+        }
+        
+        // 生成标签单独颜色设置界面
+        function generateLabelIndividualColorSettings(boxCount) {
+            labelIndividualColorsContainer.innerHTML = '';
+            // 获取标签内容
+            const labelContent = document.getElementById('boxLabels').value.split('|').map(t => t.trim());
+            for (let i = 0; i < boxCount; i++) {
+                const colorItem = document.createElement('div');
+                colorItem.className = 'individual-color-item';
+                const label = document.createElement('label');
+                label.textContent = `标签 ${i+1}:`;
+                label.title = labelContent[i] || `标签${i+1}`;
+                const colorInput = document.createElement('input');
+                colorInput.type = 'color';
+                colorInput.value = labelIndividualColors[i] || '#ff0000';
+                colorInput.dataset.index = i;
+                const textInput = document.createElement('input');
+                textInput.type = 'text';
+                textInput.value = labelContent[i] || `标签${i+1}`;
+                textInput.placeholder = `标签 ${i+1} 内容`;
+                textInput.dataset.index = i;
+                colorInput.addEventListener('input', function() {
+                    const index = parseInt(this.dataset.index);
+                    labelIndividualColors[index] = this.value;
+                    generatePreview();
+                });
+                textInput.addEventListener('input', function() {
+                    const index = parseInt(this.dataset.index);
+                    const labelContentArray = document.getElementById('boxLabels').value.split('|').map(t => t.trim());
+                    labelContentArray[index] = this.value;
+                    document.getElementById('boxLabels').value = labelContentArray.join('|');
+                    generatePreview();
+                });
+                colorItem.appendChild(label);
+                colorItem.appendChild(colorInput);
+                colorItem.appendChild(textInput);
+                labelIndividualColorsContainer.appendChild(colorItem);
+                // 初始化颜色数组
+                if (!labelIndividualColors[i]) {
+                    labelIndividualColors[i] = '#ff0000';
+                }
+            }
+        }
+        
+        // 生成白框单独尺寸设置界面
+        function generateBoxIndividualSizeSettings(boxCount) {
+            boxIndividualSizesContainer.innerHTML = '';
+            // 获取统一尺寸值
+            const defaultSize = parseInt(document.getElementById('boxSize').value);
+            for (let i = 0; i < boxCount; i++) {
+                const sizeItem = document.createElement('div');
+                sizeItem.className = 'individual-size-item';
+                const label = document.createElement('label');
+                label.textContent = `白框 ${i+1}:`;
+                const sizeInput = document.createElement('input');
+                sizeInput.type = 'range';
+                sizeInput.min = '60';
+                sizeInput.max = '200';
+                sizeInput.value = boxIndividualSizes[i] || defaultSize;
+                sizeInput.dataset.index = i;
+                const sizeValue = document.createElement('span');
+                sizeValue.className = 'range-value';
+                sizeValue.textContent = `${sizeInput.value}px`;
+                sizeInput.addEventListener('input', function() {
+                    const index = parseInt(this.dataset.index);
+                    boxIndividualSizes[index] = parseInt(this.value);
+                    sizeValue.textContent = `${this.value}px`;
+                    generatePreview();
+                });
+                sizeItem.appendChild(label);
+                sizeItem.appendChild(sizeInput);
+                sizeItem.appendChild(sizeValue);
+                boxIndividualSizesContainer.appendChild(sizeItem);
+                // 初始化尺寸数组
+                if (!boxIndividualSizes[i]) {
+                    boxIndividualSizes[i] = defaultSize;
+                }
+            }
+        }
+        
+        // 生成标题单独颜色设置界面
+        function generateTitleIndividualColorSettings() {
+            titleIndividualColorsContainer.innerHTML = '';
+            // 获取标题内容并按竖线分割
+            const titleContent = document.getElementById('titleText').value.split('|').map(t => t.trim());
+            for (let i = 0; i < titleContent.length; i++) {
+                const colorItem = document.createElement('div');
+                colorItem.className = 'individual-title-color-item';
+                const label = document.createElement('label');
+                label.textContent = `部分 ${i+1}:`;
+                label.title = titleContent[i] || `标题部分${i+1}`;
+                const colorInput = document.createElement('input');
+                colorInput.type = 'color';
+                colorInput.value = titleIndividualColors[i] || '#ffffff';
+                colorInput.dataset.index = i;
+                const textInput = document.createElement('input');
+                textInput.type = 'text';
+                textInput.value = titleContent[i] || `标题部分${i+1}`;
+                textInput.placeholder = `标题部分 ${i+1} 内容`;
+                textInput.dataset.index = i;
+                colorInput.addEventListener('input', function() {
+                    const index = parseInt(this.dataset.index);
+                    titleIndividualColors[index] = this.value;
+                    generatePreview();
+                });
+                textInput.addEventListener('input', function() {
+                    const index = parseInt(this.dataset.index);
+                    const titleContentArray = document.getElementById('titleText').value.split('|').map(t => t.trim());
+                    titleContentArray[index] = this.value;
+                    document.getElementById('titleText').value = titleContentArray.join('|');
+                    generatePreview();
+                });
+                colorItem.appendChild(label);
+                colorItem.appendChild(colorInput);
+                colorItem.appendChild(textInput);
+                titleIndividualColorsContainer.appendChild(colorItem);
+                // 初始化颜色数组
+                if (!titleIndividualColors[i]) {
+                    titleIndividualColors[i] = '#ffffff';
+                }
+            }
+        }
+        
+        // 生成标题单独字号设置界面
+        function generateTitleIndividualSizeSettings() {
+            titleIndividualSizesContainer.innerHTML = '';
+            // 获取标题内容并按竖线分割
+            const titleContent = document.getElementById('titleText').value.split('|').map(t => t.trim());
+            const defaultSize = parseInt(document.getElementById('titleSize').value);
+            for (let i = 0; i < titleContent.length; i++) {
+                const sizeItem = document.createElement('div');
+                sizeItem.className = 'individual-font-size-item';
+                const label = document.createElement('label');
+                label.textContent = `部分 ${i+1}:`;
+                label.title = titleContent[i] || `标题部分${i+1}`;
+                const sizeInput = document.createElement('input');
+                sizeInput.type = 'range';
+                sizeInput.min = '16';
+                sizeInput.max = '60';
+                sizeInput.value = titleIndividualSizes[i] || defaultSize;
+                sizeInput.dataset.index = i;
+                const sizeValue = document.createElement('span');
+                sizeValue.className = 'range-value';
+                sizeValue.textContent = `${sizeInput.value}px`;
+                sizeInput.addEventListener('input', function() {
+                    const index = parseInt(this.dataset.index);
+                    titleIndividualSizes[index] = parseInt(this.value);
+                    sizeValue.textContent = `${this.value}px`;
+                    generatePreview();
+                });
+                sizeItem.appendChild(label);
+                sizeItem.appendChild(sizeInput);
+                sizeItem.appendChild(sizeValue);
+                titleIndividualSizesContainer.appendChild(sizeItem);
+                // 初始化字号数组
+                if (!titleIndividualSizes[i]) {
+                    titleIndividualSizes[i] = defaultSize;
+                }
+            }
+        }
+        
+        // 生成文本框单独字号设置界面
+        function generateTextIndividualSizeSettings(boxCount) {
+            textIndividualSizesContainer.innerHTML = '';
+            // 获取统一字号值
+            const defaultSize = parseInt(document.getElementById('textSize').value);
+            const textContent = document.getElementById('textContent').value.split('|').map(t => t.trim());
+            for (let i = 0; i < boxCount; i++) {
+                const sizeItem = document.createElement('div');
+                sizeItem.className = 'individual-font-size-item';
+                const label = document.createElement('label');
+                label.textContent = `文本框 ${i+1}:`;
+                label.title = textContent[i] || `文本${i+1}`;
+                const sizeInput = document.createElement('input');
+                sizeInput.type = 'range';
+                sizeInput.min = '12';
+                sizeInput.max = '40';
+                sizeInput.value = textIndividualSizes[i] || defaultSize;
+                sizeInput.dataset.index = i;
+                const sizeValue = document.createElement('span');
+                sizeValue.className = 'range-value';
+                sizeValue.textContent = `${sizeInput.value}px`;
+                sizeInput.addEventListener('input', function() {
+                    const index = parseInt(this.dataset.index);
+                    textIndividualSizes[index] = parseInt(this.value);
+                    sizeValue.textContent = `${this.value}px`;
+                    generatePreview();
+                });
+                sizeItem.appendChild(label);
+                sizeItem.appendChild(sizeInput);
+                sizeItem.appendChild(sizeValue);
+                textIndividualSizesContainer.appendChild(sizeItem);
+                // 初始化字号数组
+                if (!textIndividualSizes[i]) {
+                    textIndividualSizes[i] = defaultSize;
+                }
+            }
+        }
+        
+        // 生成标签单独字号设置界面
+        function generateLabelIndividualSizeSettings(boxCount) {
+            labelIndividualSizesContainer.innerHTML = '';
+            // 获取统一字号值
+            const defaultSize = parseInt(document.getElementById('labelSize').value);
+            const labelContent = document.getElementById('boxLabels').value.split('|').map(t => t.trim());
+            for (let i = 0; i < boxCount; i++) {
+                const sizeItem = document.createElement('div');
+                sizeItem.className = 'individual-font-size-item';
+                const label = document.createElement('label');
+                label.textContent = `标签 ${i+1}:`;
+                label.title = labelContent[i] || `标签${i+1}`;
+                const sizeInput = document.createElement('input');
+                sizeInput.type = 'range';
+                sizeInput.min = '12';
+                sizeInput.max = '40';
+                sizeInput.value = labelIndividualSizes[i] || defaultSize;
+                sizeInput.dataset.index = i;
+                const sizeValue = document.createElement('span');
+                sizeValue.className = 'range-value';
+                sizeValue.textContent = `${sizeInput.value}px`;
+                sizeInput.addEventListener('input', function() {
+                    const index = parseInt(this.dataset.index);
+                    labelIndividualSizes[index] = parseInt(this.value);
+                    sizeValue.textContent = `${this.value}px`;
+                    generatePreview();
+                });
+                sizeItem.appendChild(label);
+                sizeItem.appendChild(sizeInput);
+                sizeItem.appendChild(sizeValue);
+                labelIndividualSizesContainer.appendChild(sizeItem);
+                // 初始化字号数组
+                if (!labelIndividualSizes[i]) {
+                    labelIndividualSizes[i] = defaultSize;
+                }
+            }
+        }
+        
+        // 获取当前设备类型的设置值
+        function getSettings() {
+            const isMobile = window.innerWidth <= 1100;
+            
+            if (isMobile) {
+                return {
+                    titleText: document.getElementById('titleText').value,
+                    subtitleText: document.getElementById('subtitleText').value,
+                    titleColor: document.getElementById('titleColor').value,
+                    titleSize: document.getElementById('titleSize').value,
+                    titleAlign: document.querySelector('input[name="titleAlign"]:checked').value,
+                    titleFont: document.querySelector('input[name="titleFont"]:checked').value,
+                    subtitleFont: document.querySelector('input[name="subtitleFont"]:checked').value,
+                    boxCount: parseInt(document.getElementById('boxCount').value),
+                    boxSize: parseInt(document.getElementById('boxSize').value),
+                    textContent: document.getElementById('textContent').value.split('|').map(t => t.trim()),
+                    boxLabels: document.getElementById('boxLabels').value.split('|').map(t => t.trim()),
+                    textColor: document.getElementById('textColor').value,
+                    labelColor: document.getElementById('labelColor').value,
+                    textSize: document.getElementById('textSize').value,
+                    labelSize: document.getElementById('labelSize').value,
+                    textAlign: document.querySelector('input[name="textAlign"]:checked').value,
+                    textFont: document.querySelector('input[name="textFont"]:checked').value,
+                    labelFont: document.querySelector('input[name="labelFont"]:checked').value,
+                    creatorText: document.getElementById('creatorText').value,
+                    fillerText: document.getElementById('fillerText').value
+                };
+            } else {
+                return {
+                    titleText: document.getElementById('titleTextDesktop').value,
+                    subtitleText: document.getElementById('subtitleTextDesktop').value,
+                    titleColor: document.getElementById('titleColorDesktop').value,
+                    titleSize: document.getElementById('titleSizeDesktop').value,
+                    titleAlign: document.querySelector('input[name="titleAlignDesktop"]:checked').value,
+                    titleFont: document.querySelector('input[name="titleFontDesktop"]:checked').value,
+                    subtitleFont: document.querySelector('input[name="subtitleFontDesktop"]:checked').value,
+                    boxCount: parseInt(document.getElementById('boxCountDesktop').value),
+                    boxSize: parseInt(document.getElementById('boxSizeDesktop').value),
+                    textContent: document.getElementById('textContentDesktop').value.split('|').map(t => t.trim()),
+                    boxLabels: document.getElementById('boxLabelsDesktop').value.split('|').map(t => t.trim()),
+                    textColor: document.getElementById('textColorDesktop').value,
+                    labelColor: document.getElementById('labelColorDesktop').value,
+                    textSize: document.getElementById('textSizeDesktop').value,
+                    labelSize: document.getElementById('labelSizeDesktop').value,
+                    textAlign: document.querySelector('input[name="textAlignDesktop"]:checked').value,
+                    textFont: document.querySelector('input[name="textFontDesktop"]:checked').value,
+                    labelFont: document.querySelector('input[name="labelFontDesktop"]:checked').value,
+                    creatorText: document.getElementById('creatorTextDesktop').value,
+                    fillerText: document.getElementById('fillerTextDesktop').value
+                };
+            }
+        }
+        
+        // 生成预览
+        function generatePreview() {
+            // 获取所有设置值
+            const settings = getSettings();
+            const {
+                titleText, subtitleText, titleColor, titleSize, titleAlign, titleFont, subtitleFont,
+                boxCount, boxSize, textContent, boxLabels, textColor, labelColor, textSize, labelSize,
+                textAlign, textFont, labelFont, creatorText, fillerText
+            } = settings;
+            
+            // 计算布局
+            const layout = calculateLayout(boxCount);
+            const { rows, columns, layoutDescription } = layout;
+            
+            // 更新当前布局信息
+            currentLayoutText.textContent = layoutDescription;
+            
+            // 清空预览容器
+            previewContainer.innerHTML = '';
+            
+            // 创建标题
+            const titleElement = document.createElement('div');
+            titleElement.className = 'table-title';
+            titleElement.style.textAlign = titleAlign;
+            titleElement.style.width = '100%';
+            titleElement.style.fontFamily = titleFont;
+            
+            // 判断是否使用标题单独改色功能
+            if (enableTitleColorFeatureCheckbox.checked && titleText.includes('|')) {
+                // 使用单独改色功能
+                const titleParts = titleText.split('|').map(t => t.trim());
+                titleElement.innerHTML = ''; // 清空文本内容
+                for (let i = 0; i < titleParts.length; i++) {
+                    const span = document.createElement('span');
+                    span.textContent = titleParts[i];
+                    // 使用单独颜色或统一颜色
+                    if (titleIndividualColors[i]) {
+                        span.style.color = titleIndividualColors[i];
+                    } else {
+                        span.style.color = titleColor;
+                    }
+                    // 使用单独字号或统一字号
+                    if (enableTitleSizeFeatureCheckbox.checked && titleIndividualSizes[i]) {
+                        span.style.fontSize = `${titleIndividualSizes[i]}px`;
+                    } else {
+                        span.style.fontSize = `${titleSize}px`;
+                    }
+                    titleElement.appendChild(span);
+                    // 如果不是最后一部分，添加一个空格（可选）
+                    if (i < titleParts.length - 1) {
+                        titleElement.appendChild(document.createTextNode(' '));
+                    }
+                }
+            } else {
+                // 使用统一颜色和字号
+                titleElement.style.color = titleColor;
+                titleElement.style.fontSize = `${titleSize}px`;
+                titleElement.textContent = titleText;
+            }
+            previewContainer.appendChild(titleElement);
+            
+            // 创建副标题
+            if (subtitleText && subtitleText.trim() !== '') {
+                const subtitleElement = document.createElement('div');
+                subtitleElement.className = 'table-subtitle';
+                subtitleElement.style.textAlign = titleAlign;
+                subtitleElement.style.fontFamily = subtitleFont;
+                subtitleElement.textContent = subtitleText;
+                previewContainer.appendChild(subtitleElement);
+            }
+            
+            // 创建白框和文本框容器
+            const boxesContainer = document.createElement('div');
+            boxesContainer.className = 'boxes-container';
+            boxesContainer.style.gap = '20px';
+            boxesContainer.style.marginTop = '30px';
+            boxesContainer.style.marginBottom = '20px';
+            
+            // 根据布局规则创建白框
+            let boxIndex = 0;
+            // 对于每一行
+            for (let row = 0; row < rows; row++) {
+                // 创建行容器
+                const rowContainer = document.createElement('div');
+                rowContainer.style.display = 'flex';
+                rowContainer.style.justifyContent = 'center';
+                rowContainer.style.gap = '20px';
+                rowContainer.style.marginBottom = '20px';
+                rowContainer.style.width = '100%';
+                
+                // 计算当前行的白框数量
+                let boxesInRow;
+                if (boxCount % 3 === 0) {
+                    // 3的倍数，每行3个
+                    boxesInRow = 3;
+                } else if (boxCount <= 4) {
+                    // ≤4个，全部在一行
+                    boxesInRow = boxCount;
+                } else {
+                    // >4个，分两行或三行
+                    if (rows === 2) {
+                        if (row === 0) {
+                            // 第一行
+                            boxesInRow = Math.ceil(boxCount / 2);
+                            if (boxesInRow > 4) boxesInRow = 4; // 每行最多4个
+                        } else {
+                            // 第二行
+                            boxesInRow = boxCount - Math.ceil(boxCount / 2);
+                            if (boxesInRow > 4) boxesInRow = 4; // 每行最多4个
+                        }
+                    } else if (rows === 3) {
+                        // 三行布局
+                        if (row === 0) {
+                            // 第一行
+                            boxesInRow = Math.ceil(boxCount / 3);
+                            if (boxesInRow > 4) boxesInRow = 4;
+                        } else if (row === 1) {
+                            // 第二行
+                            const firstRowCount = Math.ceil(boxCount / 3);
+                            boxesInRow = Math.ceil((boxCount - firstRowCount) / 2);
+                            if (boxesInRow > 4) boxesInRow = 4;
+                        } else {
+                            // 第三行
+                            const firstRowCount = Math.ceil(boxCount / 3);
+                            const secondRowCount = Math.ceil((boxCount - firstRowCount) / 2);
+                            boxesInRow = boxCount - firstRowCount - secondRowCount;
+                            if (boxesInRow > 4) boxesInRow = 4;
+                        }
+                    }
+                }
+                
+                // 创建当前行的白框
+                for (let col = 0; col < boxesInRow; col++) {
+                    if (boxIndex >= boxCount) break;
+                    
+                    const boxUnit = document.createElement('div');
+                    boxUnit.className = 'box-unit';
+                    
+                    // 确定白框尺寸：使用单独尺寸或统一尺寸
+                    let currentBoxSize;
+                    if (enableBoxSizeFeatureCheckbox.checked && boxIndividualSizes[boxIndex]) {
+                        currentBoxSize = boxIndividualSizes[boxIndex];
+                    } else {
+                        currentBoxSize = boxSize;
+                    }
+                    boxUnit.style.width = `${currentBoxSize}px`;
+                    
+                    // 添加白框上方的标签（如果有）
+                    if (boxLabels[boxIndex] && boxLabels[boxIndex].trim() !== '') {
+                        const boxLabel = document.createElement('div');
+                        boxLabel.className = 'box-label';
+                        boxLabel.textContent = boxLabels[boxIndex];
+                        boxLabel.style.fontFamily = labelFont;
+                        
+                        // 判断是否使用单独标签颜色
+                        if (enableLabelFeature2Checkbox.checked && labelIndividualColors[boxIndex]) {
+                            boxLabel.style.color = labelIndividualColors[boxIndex];
+                        } else {
+                            boxLabel.style.color = labelColor;
+                        }
+                        
+                        // 判断是否使用单独标签字号
+                        if (enableLabelSizeFeatureCheckbox.checked && labelIndividualSizes[boxIndex]) {
+                            boxLabel.style.fontSize = `${labelIndividualSizes[boxIndex]}px`;
+                        } else {
+                            boxLabel.style.fontSize = `${labelSize}px`;
+                        }
+                        
+                        boxLabel.style.textAlign = textAlign;
+                        boxUnit.appendChild(boxLabel);
+                    }
+                    
+                    // 创建白框
+                    const box = document.createElement('div');
+                    box.className = 'box';
+                    box.style.width = `${currentBoxSize}px`;
+                    box.style.height = `${currentBoxSize}px`;
+                    box.style.backgroundColor = '#ffffff'; // 白框内部填充白色
+                    boxUnit.appendChild(box);
+                    
+                    // 创建白框下方对应的文本框
+                    const boxText = document.createElement('div');
+                    boxText.className = 'box-text';
+                    boxText.textContent = textContent[boxIndex] || `文本${boxIndex+1}`;
+                    boxText.style.fontFamily = textFont;
+                    
+                    // 判断是否使用单独文本框颜色
+                    if (enableTextFeature2Checkbox.checked && textIndividualColors[boxIndex]) {
+                        boxText.style.color = textIndividualColors[boxIndex];
+                    } else {
+                        boxText.style.color = textColor;
+                    }
+                    
+                    // 判断是否使用单独文本框字号
+                    if (enableTextSizeFeatureCheckbox.checked && textIndividualSizes[boxIndex]) {
+                        boxText.style.fontSize = `${textIndividualSizes[boxIndex]}px`;
+                    } else {
+                        boxText.style.fontSize = `${textSize}px`;
+                    }
+                    
+                    boxText.style.textAlign = textAlign;
+                    boxText.style.width = '100%';
+                    boxUnit.appendChild(boxText);
+                    
+                    rowContainer.appendChild(boxUnit);
+                    boxIndex++;
+                }
+                // 将行容器添加到主容器
+                boxesContainer.appendChild(rowContainer);
+            }
+            previewContainer.appendChild(boxesContainer);
+            
+            // 创建底部信息
+            const footerElement = document.createElement('div');
+            footerElement.className = 'footer-text';
+            footerElement.style.marginTop = '30px';
+            
+            const creatorElement = document.createElement('div');
+            creatorElement.textContent = creatorText;
+            creatorElement.style.marginBottom = '5px';
+            
+            const fillerElement = document.createElement('div');
+            fillerElement.textContent = fillerText;
+            
+            footerElement.appendChild(creatorElement);
+            footerElement.appendChild(fillerElement);
+            previewContainer.appendChild(footerElement);
+        }
+        
+        // 保存为图片功能
+        function initSaveImage() {
+            saveImageBtn.addEventListener('click', function() {
+                // 显示下载状态
+                downloadStatus.textContent = "正在生成图片，请稍候...";
+                downloadStatus.className = "download-status";
+                downloadStatus.style.display = "block";
+                
+                // 禁用保存按钮，防止重复点击
+                saveImageBtn.disabled = true;
+                saveImageBtn.textContent = "生成中...";
+                
+                // 使用html2canvas将预览区域转换为canvas
+                html2canvas(previewContainer, {
+                    backgroundColor: '#000000', // 设置背景色为黑色
+                    scale: 2, // 提高图片质量
+                    useCORS: true, // 允许跨域资源
+                    logging: false // 关闭日志
+                }).then(function(canvas) {
+                    // 将canvas转换为图片数据URL
+                    const imageData = canvas.toDataURL('image/png');
+                    
+                    // 创建一个临时链接用于下载
+                    const link = document.createElement('a');
+                    link.download = '表格图片.png';
+                    link.href = imageData;
+                    
+                    // 模拟点击下载
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // 显示下载成功状态
+                    downloadStatus.textContent = "图片下载成功！";
+                    downloadStatus.className = "download-status download-success";
+                    
+                    // 3秒后隐藏状态消息
+                    setTimeout(() => {
+                        downloadStatus.style.display = "none";
+                    }, 3000);
+                }).catch(function(error) {
+                    console.error('生成图片时出错:', error);
+                    // 显示下载失败状态
+                    downloadStatus.textContent = "图片生成失败，请重试";
+                    downloadStatus.className = "download-status download-error";
+                }).finally(function() {
+                    // 恢复保存按钮状态
+                    saveImageBtn.disabled = false;
+                    saveImageBtn.textContent = "保存为图片";
+                });
+            });
+        }
+        
+        // 初始化事件监听器
+        function initEventListeners() {
+            // 更新范围值的显示
+            boxCountInput.addEventListener('input', function() {
+                const count = parseInt(this.value);
+                boxCountValue.textContent = `${count}个`;
+                
+                // 更新布局规则描述
+                const layout = calculateLayout(count);
+                layoutRuleText.textContent = layout.layoutDescription;
+                
+                // 如果文本框改色开启，更新单独颜色设置界面
+                if (enableTextFeature2Checkbox.checked) {
+                    generateTextIndividualColorSettings(count);
+                }
+                
+                // 如果标签改色开启，更新单独颜色设置界面
+                if (enableLabelFeature2Checkbox.checked) {
+                    generateLabelIndividualColorSettings(count);
+                }
+                
+                // 如果白框单独尺寸开启，更新单独尺寸设置界面
+                if (enableBoxSizeFeatureCheckbox.checked) {
+                    generateBoxIndividualSizeSettings(count);
+                }
+                
+                // 如果文本框单独字号开启，更新单独字号设置界面
+                if (enableTextSizeFeatureCheckbox.checked) {
+                    generateTextIndividualSizeSettings(count);
+                }
+                
+                // 如果标签单独字号开启，更新单独字号设置界面
+                if (enableLabelSizeFeatureCheckbox.checked) {
+                    generateLabelIndividualSizeSettings(count);
+                }
+                
+                generatePreview();
+            });
+            
+            boxSizeInput.addEventListener('input', function() {
+                boxSizeValue.textContent = `${this.value}px`;
+                
+                // 如果白框单独尺寸开启，更新所有单独尺寸为新的统一尺寸
+                if (enableBoxSizeFeatureCheckbox.checked) {
+                    const boxCount = parseInt(boxCountInput.value);
+                    for (let i = 0; i < boxCount; i++) {
+                        boxIndividualSizes[i] = parseInt(this.value);
+                    }
+                    generateBoxIndividualSizeSettings(boxCount);
+                }
+                generatePreview();
+            });
+            
+            titleSizeInput.addEventListener('input', function() {
+                titleSizeValue.textContent = `${this.value}px`;
+                
+                // 如果标题单独字号开启，更新所有单独字号为新的统一字号
+                if (enableTitleSizeFeatureCheckbox.checked) {
+                    const titleContent = document.getElementById('titleText').value.split('|').map(t => t.trim());
+                    for (let i = 0; i < titleContent.length; i++) {
+                        titleIndividualSizes[i] = parseInt(this.value);
+                    }
+                    generateTitleIndividualSizeSettings();
+                }
+                generatePreview();
+            });
+            
+            textSizeInput.addEventListener('input', function() {
+                textSizeValue.textContent = `${this.value}px`;
+                
+                // 如果文本框单独字号开启，更新所有单独字号为新的统一字号
+                if (enableTextSizeFeatureCheckbox.checked) {
+                    const boxCount = parseInt(boxCountInput.value);
+                    for (let i = 0; i < boxCount; i++) {
+                        textIndividualSizes[i] = parseInt(this.value);
+                    }
+                    generateTextIndividualSizeSettings(boxCount);
+                }
+                generatePreview();
+            });
+            
+            labelSizeInput.addEventListener('input', function() {
+                labelSizeValue.textContent = `${this.value}px`;
+                
+                // 如果标签单独字号开启，更新所有单独字号为新的统一字号
+                if (enableLabelSizeFeatureCheckbox.checked) {
+                    const boxCount = parseInt(boxCountInput.value);
+                    for (let i = 0; i < boxCount; i++) {
+                        labelIndividualSizes[i] = parseInt(this.value);
+                    }
+                    generateLabelIndividualSizeSettings(boxCount);
+                }
+                generatePreview();
+            });
+            
+            // 颜色选择器值变化时更新文本
+            document.getElementById('titleColor')?.addEventListener('input', function() {
+                this.nextElementSibling.textContent = this.value === '#ffffff' ? '白色' : 
+                                                    this.value === '#ff0000' ? '红色' : 
+                                                    this.value === '#0000ff' ? '蓝色' : 
+                                                    this.value === '#00ff00' ? '绿色' : 
+                                                    this.value === '#ffff00' ? '黄色' : 
+                                                    `颜色: ${this.value}`;
+            });
+            
+            document.getElementById('textColor')?.addEventListener('input', function() {
+                this.nextElementSibling.textContent = this.value === '#ffffff' ? '白色' : 
+                                                    this.value === '#ff0000' ? '红色' : 
+                                                    this.value === '#0000ff' ? '蓝色' : 
+                                                    this.value === '#00ff00' ? '绿色' : 
+                                                    this.value === '#ffff00' ? '黄色' : 
+                                                    `颜色: ${this.value}`;
+            });
+            
+            document.getElementById('labelColor')?.addEventListener('input', function() {
+                this.nextElementSibling.textContent = this.value === '#ffffff' ? '白色' : 
+                                                    this.value === '#ff0000' ? '红色' : 
+                                                    this.value === '#0000ff' ? '蓝色' : 
+                                                    this.value === '#00ff00' ? '绿色' : 
+                                                    this.value === '#ffff00' ? '黄色' : 
+                                                    `颜色: ${this.value}`;
+            });
+            
+            // 桌面端颜色选择器
+            document.getElementById('titleColorDesktop')?.addEventListener('input', function() {
+                this.nextElementSibling.textContent = this.value === '#ffffff' ? '白色' : 
+                                                    this.value === '#ff0000' ? '红色' : 
+                                                    this.value === '#0000ff' ? '蓝色' : 
+                                                    this.value === '#00ff00' ? '绿色' : 
+                                                    this.value === '#ffff00' ? '黄色' : 
+                                                    `颜色: ${this.value}`;
+            });
+            
+            document.getElementById('textColorDesktop')?.addEventListener('input', function() {
+                this.nextElementSibling.textContent = this.value === '#ffffff' ? '白色' : 
+                                                    this.value === '#ff0000' ? '红色' : 
+                                                    this.value === '#0000ff' ? '蓝色' : 
+                                                    this.value === '#00ff00' ? '绿色' : 
+                                                    this.value === '#ffff00' ? '黄色' : 
+                                                    `颜色: ${this.value}`;
+            });
+            
+            document.getElementById('labelColorDesktop')?.addEventListener('input', function() {
+                this.nextElementSibling.textContent = this.value === '#ffffff' ? '白色' : 
+                                                    this.value === '#ff0000' ? '红色' : 
+                                                    this.value === '#0000ff' ? '蓝色' : 
+                                                    this.value === '#00ff00' ? '绿色' : 
+                                                    this.value === '#ffff00' ? '黄色' : 
+                                                    `颜色: ${this.value}`;
+            });
+            
+            // 文本框改色开关事件
+            enableTextFeature2Checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    textIndividualColorsContainer.style.display = 'block';
+                    generateTextIndividualColorSettings(parseInt(boxCountInput.value));
+                } else {
+                    textIndividualColorsContainer.style.display = 'none';
+                }
+                generatePreview();
+            });
+            
+            // 标签改色开关事件
+            enableLabelFeature2Checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    labelIndividualColorsContainer.style.display = 'block';
+                    generateLabelIndividualColorSettings(parseInt(boxCountInput.value));
+                } else {
+                    labelIndividualColorsContainer.style.display = 'none';
+                }
+                generatePreview();
+            });
+            
+            // 白框单独尺寸开关
+            enableBoxSizeFeatureCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    boxIndividualSizesContainer.style.display = 'block';
+                    generateBoxIndividualSizeSettings(parseInt(boxCountInput.value));
+                } else {
+                    boxIndividualSizesContainer.style.display = 'none';
+                }
+                generatePreview();
+            });
+            
+            // 标题单独改色开关事件
+            enableTitleColorFeatureCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    titleIndividualColorsContainer.style.display = 'block';
+                    generateTitleIndividualColorSettings();
+                } else {
+                    titleIndividualColorsContainer.style.display = 'none';
+                }
+                generatePreview();
+            });
+            
+            // 标题单独字号开关事件
+            enableTitleSizeFeatureCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    titleIndividualSizesContainer.style.display = 'block';
+                    generateTitleIndividualSizeSettings();
+                } else {
+                    titleIndividualSizesContainer.style.display = 'none';
+                }
+                generatePreview();
+            });
+            
+            // 文本框单独字号开关事件
+            enableTextSizeFeatureCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    textIndividualSizesContainer.style.display = 'block';
+                    generateTextIndividualSizeSettings(parseInt(boxCountInput.value));
+                } else {
+                    textIndividualSizesContainer.style.display = 'none';
+                }
+                generatePreview();
+            });
+            
+            // 标签单独字号开关事件
+            enableLabelSizeFeatureCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    labelIndividualSizesContainer.style.display = 'block';
+                    generateLabelIndividualSizeSettings(parseInt(boxCountInput.value));
+                } else {
+                    labelIndividualSizesContainer.style.display = 'none';
+                }
+                generatePreview();
+            });
+            
+            // 文本框内容变化时，如果改色开启，更新单独颜色设置界面
+            document.getElementById('textContent')?.addEventListener('input', function() {
+                if (enableTextFeature2Checkbox.checked) {
+                    generateTextIndividualColorSettings(parseInt(boxCountInput.value));
+                }
+                if (enableTextSizeFeatureCheckbox.checked) {
+                    generateTextIndividualSizeSettings(parseInt(boxCountInput.value));
+                }
+                generatePreview();
+            });
+            
+            document.getElementById('textContentDesktop')?.addEventListener('input', function() {
+                if (enableTextFeature2Checkbox.checked) {
+                    generateTextIndividualColorSettings(parseInt(boxCountInput.value));
+                }
+                if (enableTextSizeFeatureCheckbox.checked) {
+                    generateTextIndividualSizeSettings(parseInt(boxCountInput.value));
+                }
+                generatePreview();
+            });
+            
+            // 标签内容变化时，如果改色开启，更新单独颜色设置界面
+            document.getElementById('boxLabels')?.addEventListener('input', function() {
+                if (enableLabelFeature2Checkbox.checked) {
+                    generateLabelIndividualColorSettings(parseInt(boxCountInput.value));
+                }
+                if (enableLabelSizeFeatureCheckbox.checked) {
+                    generateLabelIndividualSizeSettings(parseInt(boxCountInput.value));
+                }
+                generatePreview();
+            });
+            
+            document.getElementById('boxLabelsDesktop')?.addEventListener('input', function() {
+                if (enableLabelFeature2Checkbox.checked) {
+                    generateLabelIndividualColorSettings(parseInt(boxCountInput.value));
+                }
+                if (enableLabelSizeFeatureCheckbox.checked) {
+                    generateLabelIndividualSizeSettings(parseInt(boxCountInput.value));
+                }
+                generatePreview();
+            });
+            
+            // 标题内容变化时，如果标题改色开启，更新单独颜色设置界面
+            document.getElementById('titleText')?.addEventListener('input', function() {
+                if (enableTitleColorFeatureCheckbox.checked) {
+                    generateTitleIndividualColorSettings();
+                }
+                if (enableTitleSizeFeatureCheckbox.checked) {
+                    generateTitleIndividualSizeSettings();
+                }
+                generatePreview();
+            });
+            
+            document.getElementById('titleTextDesktop')?.addEventListener('input', function() {
+                if (enableTitleColorFeatureCheckbox.checked) {
+                    generateTitleIndividualColorSettings();
+                }
+                if (enableTitleSizeFeatureCheckbox.checked) {
+                    generateTitleIndividualSizeSettings();
+                }
+                generatePreview();
+            });
+            
+            // 更新预览按钮点击事件
+            updatePreviewBtn.addEventListener('click', generatePreview);
+            
+            // 重置设置按钮点击事件
+            resetSettingsBtn.addEventListener('click', function() {
+                const isMobile = window.innerWidth <= 1100;
+                
+                if (isMobile) {
+                    // 重置所有输入到默认值
+                    document.getElementById('titleText').value = '这是|标题';
+                    document.getElementById('subtitleText').value = '这是副标题/说明';
+                    document.getElementById('titleColor').value = '#ffffff';
+                    document.getElementById('titleColor').nextElementSibling.textContent = '白色';
+                    document.getElementById('titleSize').value = 32;
+                    document.getElementById('titleSizeValue').textContent = '32px';
+                    document.getElementById('titleAlignCenter').checked = true;
+                    document.getElementById('titleFontSong').checked = true;
+                    document.getElementById('subtitleFontHei').checked = true;
+                    
+                    document.getElementById('boxCount').value = 6;
+                    document.getElementById('boxCountValue').textContent = '6个';
+                    const layout = calculateLayout(6);
+                    layoutRuleText.textContent = layout.layoutDescription;
+                    
+                    document.getElementById('boxSize').value = 100;
+                    document.getElementById('boxSizeValue').textContent = '100px';
+                    
+                    document.getElementById('textContent').value = '文本1|文本2|文本3|文本4|文本5|文本6';
+                    document.getElementById('boxLabels').value = '标签1|标签2|标签3|标签4|标签5|标签6';
+                    
+                    document.getElementById('textFontKai').checked = true;
+                    document.getElementById('labelFontHei').checked = true;
+                    
+                    document.getElementById('textColor').value = '#ffffff';
+                    document.getElementById('textColor').nextElementSibling.textContent = '白色';
+                    document.getElementById('labelColor').value = '#ff0000';
+                    document.getElementById('labelColor').nextElementSibling.textContent = '红色';
+                    
+                    document.getElementById('textSize').value = 16;
+                    document.getElementById('textSizeValue').textContent = '16px';
+                    document.getElementById('labelSize').value = 16;
+                    document.getElementById('labelSizeValue').textContent = '16px';
+                    
+                    document.getElementById('textAlignCenter').checked = true;
+                    document.getElementById('creatorText').value = '制表人：填了就会显示，不填就不显示';
+                    document.getElementById('fillerText').value = '也可以当底部碎碎念来用';
+                    
+                    // 重置功能
+                    enableTextFeature2Checkbox.checked = false;
+                    textIndividualColorsContainer.style.display = 'none';
+                    textIndividualColors = [];
+                    
+                    enableLabelFeature2Checkbox.checked = false;
+                    labelIndividualColorsContainer.style.display = 'none';
+                    labelIndividualColors = [];
+                    
+                    enableBoxSizeFeatureCheckbox.checked = false;
+                    boxIndividualSizesContainer.style.display = 'none';
+                    boxIndividualSizes = [];
+                    
+                    enableTitleColorFeatureCheckbox.checked = false;
+                    titleIndividualColorsContainer.style.display = 'none';
+                    titleIndividualColors = [];
+                    
+                    enableTitleSizeFeatureCheckbox.checked = false;
+                    titleIndividualSizesContainer.style.display = 'none';
+                    titleIndividualSizes = [];
+                    
+                    enableTextSizeFeatureCheckbox.checked = false;
+                    textIndividualSizesContainer.style.display = 'none';
+                    textIndividualSizes = [];
+                    
+                    enableLabelSizeFeatureCheckbox.checked = false;
+                    labelIndividualSizesContainer.style.display = 'none';
+                    labelIndividualSizes = [];
+                } else {
+                    // 重置桌面端设置
+                    document.getElementById('titleTextDesktop').value = '这是|标题';
+                    document.getElementById('subtitleTextDesktop').value = '这是副标题/说明';
+                    document.getElementById('titleColorDesktop').value = '#ffffff';
+                    document.getElementById('titleColorDesktop').nextElementSibling.textContent = '白色';
+                    document.getElementById('titleSizeDesktop').value = 32;
+                    document.getElementById('titleSizeValueDesktop').textContent = '32px';
+                    document.getElementById('titleAlignCenterDesktop').checked = true;
+                    document.getElementById('titleFontSongDesktop').checked = true;
+                    document.getElementById('subtitleFontHeiDesktop').checked = true;
+                    
+                    document.getElementById('boxCountDesktop').value = 6;
+                    document.getElementById('boxCountValueDesktop').textContent = '6个';
+                    const layout = calculateLayout(6);
+                    layoutRuleText.textContent = layout.layoutDescription;
+                    
+                    document.getElementById('boxSizeDesktop').value = 100;
+                    document.getElementById('boxSizeValueDesktop').textContent = '100px';
+                    
+                    document.getElementById('textContentDesktop').value = '文本1|文本2|文本3|文本4|文本5|文本6';
+                    document.getElementById('boxLabelsDesktop').value = '标签1|标签2|标签3|标签4|标签5|标签6';
+                    
+                    document.getElementById('textFontKaiDesktop').checked = true;
+                    document.getElementById('labelFontHeiDesktop').checked = true;
+                    
+                    document.getElementById('textColorDesktop').value = '#ffffff';
+                    document.getElementById('textColorDesktop').nextElementSibling.textContent = '白色';
+                    document.getElementById('labelColorDesktop').value = '#ff0000';
+                    document.getElementById('labelColorDesktop').nextElementSibling.textContent = '红色';
+                    
+                    document.getElementById('textSizeDesktop').value = 16;
+                    document.getElementById('textSizeValueDesktop').textContent = '16px';
+                    document.getElementById('labelSizeDesktop').value = 16;
+                    document.getElementById('labelSizeValueDesktop').textContent = '16px';
+                    
+                    document.getElementById('textAlignCenterDesktop').checked = true;
+                    document.getElementById('creatorTextDesktop').value = '制表人：填了就会显示，不填就不显示';
+                    document.getElementById('fillerTextDesktop').value = '也可以当底部碎碎念来用';
+                    
+                    // 重置功能
+                    enableTextFeature2Checkbox.checked = false;
+                    textIndividualColorsContainer.style.display = 'none';
+                    textIndividualColors = [];
+                    
+                    enableLabelFeature2Checkbox.checked = false;
+                    labelIndividualColorsContainer.style.display = 'none';
+                    labelIndividualColors = [];
+                    
+                    enableBoxSizeFeatureCheckbox.checked = false;
+                    boxIndividualSizesContainer.style.display = 'none';
+                    boxIndividualSizes = [];
+                    
+                    enableTitleColorFeatureCheckbox.checked = false;
+                    titleIndividualColorsContainer.style.display = 'none';
+                    titleIndividualColors = [];
+                    
+                    enableTitleSizeFeatureCheckbox.checked = false;
+                    titleIndividualSizesContainer.style.display = 'none';
+                    titleIndividualSizes = [];
+                    
+                    enableTextSizeFeatureCheckbox.checked = false;
+                    textIndividualSizesContainer.style.display = 'none';
+                    textIndividualSizes = [];
+                    
+                    enableLabelSizeFeatureCheckbox.checked = false;
+                    labelIndividualSizesContainer.style.display = 'none';
+                    labelIndividualSizes = [];
+                }
+                
+                // 更新预览
+                generatePreview();
+            });
+            
+            // 实时预览更新
+            const allInputs = document.querySelectorAll('input, select, textarea');
+            allInputs.forEach(input => {
+                input.addEventListener('input', generatePreview);
+                if (input.type === 'radio') {
+                    input.addEventListener('change', generatePreview);
+                }
+            });
+        }
+        
+        // 同步移动端和桌面端的设置
+        function syncSettings() {
+            // 同步标题设置
+            document.getElementById('titleText')?.addEventListener('input', function() {
+                document.getElementById('titleTextDesktop').value = this.value;
+            });
+            document.getElementById('titleTextDesktop')?.addEventListener('input', function() {
+                document.getElementById('titleText').value = this.value;
+            });
+            
+            // 同步副标题设置
+            document.getElementById('subtitleText')?.addEventListener('input', function() {
+                document.getElementById('subtitleTextDesktop').value = this.value;
+            });
+            document.getElementById('subtitleTextDesktop')?.addEventListener('input', function() {
+                document.getElementById('subtitleText').value = this.value;
+            });
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            initElements();
+            initMobileSidebar();
+            initEventListeners();
+            initSaveImage();
+            syncSettings();
+            
+            // 初始布局信息
+            const layout = calculateLayout(6);
+            layoutRuleText.textContent = layout.layoutDescription;
+            
+            // 初始化预览
+            generatePreview();
+        });
+        
+        // 窗口大小变化时重新初始化
+        window.addEventListener('resize', function() {
+            initElements();
+            generatePreview();
+        });
+    </script>
+</body>
+</html>
